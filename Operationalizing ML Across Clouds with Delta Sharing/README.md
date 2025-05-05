@@ -1,7 +1,7 @@
 # Operationalizing ML Across Clouds with Delta Sharing (Demo)
 
 **Share, Deploy, and Serve Machine Learning Models Across AWS and Azure Workspaces Using Unity Catalog and Delta Sharing**  
-**Authors:** Alexander Booth, Smriti Sridhar, Dan Pechi
+**Authors:** Alexander Booth
 
 ---
 
