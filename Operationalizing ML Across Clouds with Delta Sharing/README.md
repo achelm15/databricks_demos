@@ -20,7 +20,7 @@ This cross-cloud workflow highlights the use of native Databricks capabilities f
 
 The demo is organized across six notebooks in two Databricks Workspaces:
 - **Notebooks 00-02 (Workspace A):** Train, Register, and Share the Models
-- **Notebook2 03-05 (Workspace B):** Accept, Infer, and Serve the Models
+- **Notebooks 03-05 (Workspace B):** Accept, Infer, and Serve the Models
 
 ---
 
