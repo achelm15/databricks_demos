@@ -16,12 +16,11 @@ In this setup:
 - **Workspace B (Prod Workspace on Azure):**  
   Accept the shared model, load it for ad hoc inference, deploy it to a real-time serving endpoint, and perform API-driven predictions.
 
-This cross-cloud workflow highlights the use of native Databricks capabilities for seamless multicloud model sharing, centralized governance, and production deployment without requiring manual artifact handling.  
-(Note: Any two workspaces can be used interchangeably.)
+This cross-cloud workflow highlights the use of native Databricks capabilities for seamless multicloud model sharing, centralized governance, and production deployment without requiring manual artifact handling. However, any two workspaces can be used interchangeably.
 
-The demo is organized across two Databricks Notebooks:
-- **Notebook 1 (Workspace A):** Train, Register, and Share the Model
-- **Notebook 2 (Workspace B):** Accept, Infer, and Serve the Model
+The demo is organized across six notebooks in two Databricks Workspaces:
+- **Notebooks 00-02 (Workspace A):** Train, Register, and Share the Model
+- **Notebook2 03-05 (Workspace B):** Accept, Infer, and Serve the Model
 
 ---
 
@@ -59,9 +58,9 @@ This demo is executed across two Databricks workspaces: one for model creation (
 2. Accept the Delta Share programmatically by creating a new catalog linked to the shared model.
 3. Load the shared model directly from Unity Catalog.
 4. Perform ad hoc inference on new sample data using the loaded model.
-5. Create a real-time serving endpoint programmatically using the Databricks Model Serving API.
+5. Create a real-time serving endpoint programmatically using the Databricks Model Serving API. Include both model entities for A/B testing, configured with traffic splitting.
 6. Send inference requests to the deployed serving endpoint via REST API.
-7. View prediction results and confirm end-to-end model operationalization.
+7. View prediction results, adjust traffic routing, and confirm end-to-end model operationalization.
 
 ---
 
@@ -75,17 +74,17 @@ Before running the demo, ensure that:
 - You have appropriate privileges:
   - **Workspace A:** Ability to create models and Delta Shares.
   - **Workspace B:** Ability to create catalogs and serving endpoints.
-- **Databricks Runtime 15.4 LTS ML** or later is used for both workspaces.
+- **Databricks Runtime 16.x ML** or later is used for both workspaces.
 
 ---
 
 ## Next Steps
 
-This demo provides a foundation for cross-workspace model sharing and operationalization. The workflow can be extended to support more advanced use cases, including model experimentation and A/B testing.
+This demo provides a foundation for cross-workspace model sharing and operationalization via A/B testing and monitoring. The workflow can then be extended to support more advanced use cases, including model experimentation and version management via CI/CD integrations.
 
 Potential next steps include:
 
-### A/B Testing Across Shared Models
+### Advanced A/B Testing Across Shared Models
 - Share multiple versions of a model (e.g., current production model and a candidate model) via Delta Sharing.
 - Deploy each model to its own serving endpoint or configure a single endpoint to route traffic between versions.
 - Route production inference traffic between models using predefined splits (e.g., 50/50 or 80/20).
@@ -109,9 +108,10 @@ Potential next steps include:
 
 ## Summary
 
-This demo showcased how Unity Catalog, Delta Sharing, and Databricks Model Serving can be used together to enable secure, scalable, and operationally efficient machine learning workflows across workspaces.
+This demo showcased how Unity Catalog, Delta Sharing, and Databricks Model Serving can be used together to enable secure, scalable, and operationally efficient machine learning workflows, such as A/B testing, across workspaces.
 
-By leveraging native platform capabilities, teams can streamline model sharing, simplify production deployments, and accelerate experimentation with minimal overhead.  
+By leveraging native platform capabilities, teams can streamline model sharing, simplify production deployments, and accelerate experimentation with minimal overhead. 
+
 The practices demonstrated here form a strong foundation for advanced MLOps strategies, including model monitoring, governance, and A/B testing at enterprise scale.
 
 ---
@@ -138,4 +138,3 @@ The practices demonstrated here form a strong foundation for advanced MLOps stra
 
 - [Blog: Manage ML Models with Unity Catalog](https://www.databricks.com/blog/2023/07/12/manage-govern-machine-learning-models-unity-catalog.html)  
   Overview of managing and governing ML models natively with Unity Catalog.
-
