@@ -14,7 +14,7 @@ In this setup:
   Train Champion and Challenger machine learning models using AutoML, register them in Unity Catalog, and share via Delta Sharing.
 
 - **Workspace B (Prod Workspace on Azure):**  
-  Accept the shared models, load them for ad hoc inference, deploy it to a real-time serving endpoint, and perform A/B testing via API-driven predictions.
+  Accept the shared models, load them for ad hoc inference, deploy as entities to a real-time serving endpoint, and perform A/B testing via API-driven predictions.
 
 This cross-cloud workflow highlights the use of native Databricks capabilities for seamless multicloud model sharing, centralized governance, and production deployment without requiring manual artifact handling. However, any two workspaces can be used interchangeably.
 
