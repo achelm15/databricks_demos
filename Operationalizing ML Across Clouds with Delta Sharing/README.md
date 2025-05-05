@@ -11,16 +11,16 @@ This demo showcases how to share and operationalize machine learning models acro
 
 In this setup:
 - **Workspace A (Dev Workspace on AWS):**  
-  Train a machine learning model using AutoML, register it in Unity Catalog, and share it via Delta Sharing.
+  Train Champion and Challenger machine learning models using AutoML, register them in Unity Catalog, and share via Delta Sharing.
 
 - **Workspace B (Prod Workspace on Azure):**  
-  Accept the shared model, load it for ad hoc inference, deploy it to a real-time serving endpoint, and perform API-driven predictions.
+  Accept the shared models, load them for ad hoc inference, deploy it to a real-time serving endpoint, and perform A/B testing via API-driven predictions.
 
 This cross-cloud workflow highlights the use of native Databricks capabilities for seamless multicloud model sharing, centralized governance, and production deployment without requiring manual artifact handling. However, any two workspaces can be used interchangeably.
 
 The demo is organized across six notebooks in two Databricks Workspaces:
-- **Notebooks 00-02 (Workspace A):** Train, Register, and Share the Model
-- **Notebook2 03-05 (Workspace B):** Accept, Infer, and Serve the Model
+- **Notebooks 00-02 (Workspace A):** Train, Register, and Share the Models
+- **Notebook2 03-05 (Workspace B):** Accept, Infer, and Serve the Models
 
 ---
 
