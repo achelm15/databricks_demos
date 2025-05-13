@@ -46,5 +46,6 @@ Exciting developments are underway to bring full support for the classic `pyspar
 
 - [Databricks Connect for Python](https://docs.databricks.com/dev-tools/databricks-connect/python/)
 - [Distributed ML with Spark Connect](https://docs.databricks.com/machine-learning/train-model/distributed-training/distributed-ml-for-spark-connect)
+- [Spark Connect Overview for Spark 4.0](spark.apache.org/docs/4.0.0-preview2/spark-connect-overview.html)
 - [SPARK-49907: Support spark.ml on Connect](https://issues.apache.org/jira/browse/SPARK-49907)
 - [Apache Spark PR #48791](https://github.com/apache/spark/pull/48791)
