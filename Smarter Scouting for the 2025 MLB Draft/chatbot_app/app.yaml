@@ -6,6 +6,6 @@ env:
 - name: MODEL_SERVING_ENDPOINT
   value: agents_alexander_booth-rag_demo-scouting_reports_agent
 - name: DATABRICKS_TOKEN
-  value: xxxxxxxxxxxxxxx
+  value: DATABRICKS_TOKEN
 - name: DATABRICKS_HOST
-  value: https://e2-demo-field-eng.cloud.databricks.com
+  value: DATABRICKS_HOST

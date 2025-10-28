@@ -4,7 +4,7 @@ import requests
 
 # Environment config
 SERVING_ENDPOINT = os.environ["MODEL_SERVING_ENDPOINT"]
-DATABRICKS_HOST = os.environ.get("DATABRICKS_HOST", "https://e2-demo-field-eng.cloud.databricks.com")
+DATABRICKS_HOST = os.environ.get("DATABRICKS_HOST", "DATABRICKS_HOST")
 DATABRICKS_TOKEN = os.environ["DATABRICKS_TOKEN"]
 
 # Page config
@@ -12,16 +12,14 @@ st.set_page_config(page_title="Scouting Report Chat", page_icon="🔎", layout="
 st.title("🔎 Scouting Report Chat")
 st.caption("This demo lets you chat with a RAG-powered assistant trained on baseball scouting reports. Answers are based only on indexed reports, and source references are included below each response.")
 
+# Example questions (static markdown)
 with st.expander("💡 Example questions", expanded=True):
-    examples = [
-        "Tell me about Roman Anthony.",
-        "What are Andrew Painter’s strengths?",
-        "Compare Marcelo Mayer to Jordan Lawlar."
-    ]
-    for example in examples:
-        if st.button(example):
-            st.session_state.history.append({"role": "user", "content": example})
-            st.rerun()
+    st.markdown("""
+    💬 **Try asking:**
+    - `Tell me about Jace LaViolette.`
+    - `What are Jamie Arnold’s strengths?`
+    - `Compare Ethan Holliday to Billy Carlson.`
+    """)
 
 # Clear button
 if st.button("🧹 Clear chat"):
@@ -43,8 +41,7 @@ if user_input:
         try:
             # Format history for endpoint
             messages = [
-                {"role": "user", "content": m["content"]} if m["role"] == "user"
-                else {"role": "assistant", "content": m["content"]}
+                {"role": m["role"], "content": m["content"]}
                 for m in st.session_state.history
             ]
 
@@ -59,12 +56,12 @@ if user_input:
                     "Authorization": f"Bearer {DATABRICKS_TOKEN}",
                     "Content-Type": "application/json"
                 },
-                json={"inputs": payload},
+                json=payload,
                 timeout=30
             )
 
             response.raise_for_status()
-            reply = response.json().get("predictions", ["(No answer returned)"])[0]
+            reply = response.json()["choices"][0]["message"]["content"]
         except Exception as e:
             reply = f"ERROR: {e}"
 

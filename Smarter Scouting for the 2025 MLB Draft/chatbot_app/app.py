@@ -3,7 +3,7 @@ import requests
 import os
 
 # ---- Config ----
-ENDPOINT_URL = "https://e2-demo-field-eng.cloud.databricks.com/serving-endpoints/agents_alexander_booth-rag_demo-scouting_reports_agent/invocations"
+ENDPOINT_URL = "DATABRICKS_HOST/serving-endpoints/agents_alexander_booth-rag_demo-scouting_reports_agent/invocations"
 DATABRICKS_TOKEN = os.getenv("DATABRICKS_TOKEN") 
 
 # ---- Streamlit Setup ----
