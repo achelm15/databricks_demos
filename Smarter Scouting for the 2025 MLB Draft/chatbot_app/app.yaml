@@ -4,8 +4,6 @@ command:
 - main.py
 env:
 - name: MODEL_SERVING_ENDPOINT
-  value: agents_alexander_booth-rag_demo-scouting_reports_agent
+  value: agents_mlb_tech_summit-rag_demo-scouting_reports_agent
 - name: DATABRICKS_TOKEN
   value: DATABRICKS_TOKEN
-- name: DATABRICKS_HOST
-  value: DATABRICKS_HOST

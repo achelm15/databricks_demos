@@ -7,11 +7,11 @@ import pyspark.sql.functions as F
 
 # DBTITLE 1,Global Variables
 # Global variables
-CATALOG = 'mlb_gumbo'
-DATABASE_L = 'landing'
-DATABASE_B = 'bronze'
-DATABASE_S = 'silver'
-DATABASE_G = 'gold'
+CATALOG = 'mlb_tech_summit'
+DATABASE_L = 'mlb_gumbo_landing'
+DATABASE_B = 'mlb_gumbo_bronze'
+DATABASE_S = 'mlb_gumbo_silver'
+DATABASE_G = 'mlb_gumbo_gold'
 
 # Data Location
 CHECKPOINT_BASE = f"/Volumes/{CATALOG}/{DATABASE_L}/mlb_gumbo_checkpoints"
@@ -19,15 +19,15 @@ CHECKPOINT_BASE = f"/Volumes/{CATALOG}/{DATABASE_L}/mlb_gumbo_checkpoints"
 # COMMAND ----------
 
 # DBTITLE 1,Create Catalog
-spark.sql(f"""
-          CREATE CATALOG IF NOT EXISTS {CATALOG}
-          COMMENT 'Catalog for storing and processing all MLB GUMBO data';
-          """)
+# spark.sql(f"""
+#           CREATE CATALOG IF NOT EXISTS {CATALOG}
+#           COMMENT 'Catalog for storing and processing all MLB GUMBO data';
+#           """)
 
-spark.sql(f"""
-          ALTER CATALOG {CATALOG}
-          SET TAGS ('removeAfter' = '20251101');
-          """)
+# spark.sql(f"""
+#           ALTER CATALOG {CATALOG}
+#           SET TAGS ('removeAfter' = '20281231');
+#           """)
 
 spark.sql(f"""
           USE CATALOG {CATALOG};
@@ -70,7 +70,13 @@ spark.sql(f"""
 # MAGIC   file_size BIGINT COMMENT "Size of the source file",
 # MAGIC   file_modification_time TIMESTAMP COMMENT "Last modification time of the source file",
 # MAGIC   file_batch_time TIMESTAMP COMMENT "Timestamp of the batch",
-# MAGIC   last_update_time TIMESTAMP COMMENT "Timestamp of the last update"
+# MAGIC   last_update_time TIMESTAMP COMMENT "Timestamp of the last update",
+# MAGIC   year STRING COMMENT "Year of the last update",
+# MAGIC   month STRING COMMENT "Month of the last update",
+# MAGIC   day STRING COMMENT "Day of the last update",
+# MAGIC   hour STRING COMMENT "Hour of the last update",
+# MAGIC   minute STRING COMMENT "Minute of the last update",
+# MAGIC   second STRING COMMENT "Second of the last update"
 # MAGIC )
 # MAGIC USING DELTA
 # MAGIC CLUSTER BY (file_batch_time)
@@ -456,7 +462,7 @@ spark.sql(f"""
 # MAGIC     pitch_spin_rate INTEGER COMMENT 'Spin rate of the pitch (rpm)',
 # MAGIC     position_x DOUBLE COMMENT 'Horizontal position of the pitch at the plate (feet)',
 # MAGIC     position_z DOUBLE COMMENT 'Vertical position of the pitch at the plate (feet)',
-# MAGIC     strike_probability FLOAT COMMENT 'Predicted probability of the pitch being a strike',
+# MAGIC     called_strike_probability FLOAT COMMENT 'Predicted probability of the pitch being called a strike',
 # MAGIC     last_update_time TIMESTAMP COMMENT "Timestamp of the last update"
 # MAGIC )
 # MAGIC USING delta
@@ -529,13 +535,13 @@ spark.sql(f"""
 #     sp.strike_probability             -- Model-predicted probability of a strike
 
 # FROM
-#     mlb_gumbo.silver.game_data g
+#     mlb_tech_summit.mlb_gumbo_silver.game_data g
 # JOIN
-#     mlb_gumbo.silver.pitch_data p
+#     mlb_tech_summit.mlb_gumbo_silver.pitch_data p
 # ON
 #     g.game_pk = p.game_pk
 # LEFT JOIN
-#     mlb_gumbo.silver.strike_probability sp
+#     mlb_tech_summit.mlb_gumbo_silver.strike_probability sp
 # ON
 #     g.game_pk = sp.game_pk
 #     AND p.at_bat_index = sp.at_bat_index
@@ -548,3 +554,4 @@ spark.sql(f"""
 
 # COMMAND ----------
 
+# 
