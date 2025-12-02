@@ -49,8 +49,7 @@ df = df_pitches.select(
     F.col("pitch_break_horizontal"),
     F.col("pitch_spin_rate"),
     F.col("position_x"),
-    F.col("position_z"),
-    F.col("pitch_break_horizontal"),
+    F.col("position_z")
 )
 
 # Drop rows with missing values
@@ -58,11 +57,15 @@ df = df.dropna()
 
 # COMMAND ----------
 
-# Load the MLflow model (replace with your model URI or registry path)
-model_uri = "models:/mlb_gumbo.silver.strike_probability_model/1"
-model = mlflow.sklearn.load_model(model_uri)
+import numpy as np
 
-# Define a Pandas UDF for prediction
+# Serving endpoint configuration
+serving_endpoint_url = "https://fe-vm-vdm-classic-212e0j.cloud.databricks.com/serving-endpoints/mlb-summit-strike-probability/invocations"
+
+# Get Databricks token for authentication
+token = dbutils.notebook.entry_point.getDbutils().notebook().getContext().apiToken().get()
+
+# Define a Pandas UDF for prediction using the serving endpoint
 @pandas_udf(FloatType())
 def predict_udf(*cols):
     # Combine feature columns into a Pandas DataFrame
@@ -71,9 +74,45 @@ def predict_udf(*cols):
                     "position_x", "position_z"]
     input_data = pd.DataFrame({col: vals for col, vals in zip(feature_cols, cols)})
     
-    # Apply the model to generate probabilities
-    probabilities = model.predict_proba(input_data)  # 2D array
-    return pd.Series(probabilities[:, 1]) 
+    # Prepare the request payload
+    # Convert DataFrame to list of records for the API
+    dataframe_records = input_data.to_dict(orient='records')
+    payload = {
+        "dataframe_records": dataframe_records
+    }
+    
+    # Make the API request
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+    
+    response = requests.post(serving_endpoint_url, json=payload, headers=headers)
+    
+    if response.status_code != 200:
+        raise Exception(f"Serving endpoint error: {response.status_code} - {response.text}")
+    
+    # Parse the response
+    result = response.json()
+    
+    # Extract probabilities from the response
+    # The response format depends on how the model was logged
+    # For a classifier, it typically returns predictions in 'predictions' key
+    if 'predictions' in result:
+        predictions = result['predictions']
+        # If predictions is a list of probabilities for class 1
+        if isinstance(predictions[0], (int, float)):
+            probabilities = predictions
+        # If predictions is a list of [prob_class_0, prob_class_1]
+        elif isinstance(predictions[0], list):
+            probabilities = [p[1] for p in predictions]
+        else:
+            probabilities = predictions
+    else:
+        # Fallback: assume the result itself contains the predictions
+        probabilities = result
+    
+    return pd.Series(probabilities)
 
 # Apply the prediction UDF to the streaming DataFrame
 feature_columns = [
@@ -82,7 +121,7 @@ feature_columns = [
     "position_x", "position_z"
 ]
 df_with_predictions = df.withColumn(
-    "strike_probability", 
+    "called_strike_probability", 
     predict_udf(*[F.col(col) for col in feature_columns])
 ).withColumn(
     "last_update_time", F.current_timestamp()
@@ -93,7 +132,7 @@ df_with_predictions = df.withColumn(
 from delta.tables import DeltaTable
 
 def upsert_to_silver(batch_df, batch_id):
-    silver_table_name = "mlb_gumbo.silver.strike_probability"  # Unity Catalog table name
+    silver_table_name = "mlb_tech_summit.mlb_gumbo_silver.strike_probability"  # Unity Catalog table name
 
     # Reference the Delta table
     silver_table = DeltaTable.forName(spark, silver_table_name)
@@ -124,3 +163,7 @@ def upsert_to_silver(batch_df, batch_id):
     .start()
     .awaitTermination()  # Wait for streaming to finish
 )
+
+# COMMAND ----------
+
+

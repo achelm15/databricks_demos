@@ -33,7 +33,6 @@ df_raw = (
 # COMMAND ----------
 
 # Save the streaming table off as a temp view
-# variant_explode is only available in SQL
 df_raw.createOrReplaceTempView(temp_table_name)
 
 # COMMAND ----------
@@ -190,15 +189,16 @@ df = spark.sql(f"""
 
 # Define the upsert function
 def upsert_to_silver(batch_df, batch_id):
-    silver_table_name = "mlb_gumbo.silver.pitch_data"  # Unity Catalog table name
+    silver_table_name = "mlb_tech_summit.mlb_gumbo_silver.pitch_data"  # Unity Catalog table name
+    temp_table_name = "temp_silver_mlb_gumbo_pitch_data"
 
     # Register the incoming batch as a temporary view
-    batch_df.createOrReplaceTempView("temp_silver_mlb_gumbo_pitch_data")
+    batch_df.createOrReplaceTempView(temp_table_name)
     
     # Perform the MERGE operation with SQL
     spark.sql(f"""
         MERGE INTO {silver_table_name} AS silver
-        USING temp_silver_mlb_gumbo_pitch_data AS updates
+        USING `{temp_table_name}` AS updates
         ON silver.season = updates.season and
           silver.official_date = updates.official_date and
           silver.game_pk = updates.game_pk and 
@@ -208,6 +208,7 @@ def upsert_to_silver(batch_df, batch_id):
         WHEN NOT MATCHED THEN INSERT *
     """)
 
+    spark.catalog.dropTempView(temp_table_name)
 
 # COMMAND ----------
 
@@ -222,4 +223,5 @@ def upsert_to_silver(batch_df, batch_id):
 )
 
 # COMMAND ----------
+
 

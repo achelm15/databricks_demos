@@ -28,11 +28,14 @@ DATA_LOCATION = f"/Volumes/{CATALOG}/{DATABASE_L}/mlb_gumbo_data"
 # today = datetime.now().strftime("%Y-%m-%d") # Use current date to get games today
 
 # Define the start and end dates for the schedule
-start_date = "2024-3-01"
-end_date = "2024-11-01"
+season = 2024
+start_date = f"{season}-03-01"
+end_date = f"{season}-11-05"
+sport_id = 11
 
-# Construct the URL to fetch the schedule data from the MLB API
-URL = f"https://statsapi.mlb.com/api/v1/schedule?sportId=1&teamId=116&gameType=R,D,F&startDate={start_date}&endDate={end_date}"
+# Construct the URL to fetch the schedule data from the MLB API, &teamId=116 by team
+URL = f"https://statsapi.mlb.com/api/v1/schedule?sportId={sport_id}&gameType=R,D,F,L,W&startDate={start_date}&endDate={end_date}"
+print(URL)
 data = requests.get(URL).json()  # Fetch the data and parse it as JSON
 
 # Initialize an empty list to store game PKs
@@ -73,28 +76,4 @@ for game_pk in game_pks:
 
 # COMMAND ----------
 
-# Define Bronze Table
-BRONZE_TABLE = f"{CATALOG}.{DATABASE_B}.raw_data"
-
-# Ingest
-query = (spark.readStream
-  .format("cloudFiles")
-  .option("cloudFiles.format", "json")
-  .option("singleVariantColumn", "data")
-  .load(f"{DATA_LOCATION}/*.json")
-  .withColumn("file_path", F.col("_metadata.file_path"))
-  .withColumn("file_name", F.col("_metadata.file_name"))
-  .withColumn("file_size", F.col("_metadata.file_size"))
-  .withColumn("file_modification_time", F.col("_metadata.file_modification_time"))
-  .withColumn("file_batch_time", F.lit(current_run))
-  .withColumn("last_update_time", F.current_timestamp())
-  .writeStream
-  .option("checkpointLocation", f"{CHECKPOINT_LOCATION_BRONZE}")
-  .trigger(availableNow=True)
-  .toTable(BRONZE_TABLE)
-)
-
-query.awaitTermination()
-
-# COMMAND ----------
 
