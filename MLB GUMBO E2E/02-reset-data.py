@@ -22,7 +22,7 @@ DATA_LOCATION = f"/Volumes/{CATALOG}/{DATABASE_L}/mlb_gumbo_data"
 # COMMAND ----------
 
 # Gold
-tables_to_drop = ["game_report_mv"]
+tables_to_drop = ["game_report_mv", "game_report_iceberg"]
 for table in tables_to_drop:
   spark.sql(f"DROP TABLE IF EXISTS {CATALOG}.{DATABASE_G}.{table}")
 print("Deleted GOLD database!")

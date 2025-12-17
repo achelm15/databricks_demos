@@ -554,4 +554,10 @@ spark.sql(f"""
 
 # COMMAND ----------
 
-# 
+# %sql
+# CREATE TABLE mlb_tech_summit.mlb_gumbo_gold.game_report_iceberg
+# USING iceberg
+# AS
+# SELECT *
+# FROM mlb_tech_summit.mlb_gumbo_gold.game_report_mv;
+
