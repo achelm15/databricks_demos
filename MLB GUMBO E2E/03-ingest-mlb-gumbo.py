@@ -31,7 +31,7 @@ DATA_LOCATION = f"/Volumes/{CATALOG}/{DATABASE_L}/mlb_gumbo_data"
 season = 2024
 start_date = f"{season}-03-01"
 end_date = f"{season}-11-05"
-sport_id = 11
+sport_id = 1
 
 # Construct the URL to fetch the schedule data from the MLB API, &teamId=116 by team
 URL = f"https://statsapi.mlb.com/api/v1/schedule?sportId={sport_id}&gameType=R,D,F,L,W&startDate={start_date}&endDate={end_date}"

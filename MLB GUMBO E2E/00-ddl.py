@@ -7,7 +7,7 @@ import pyspark.sql.functions as F
 
 # DBTITLE 1,Global Variables
 # Global variables
-CATALOG = 'mlb_tech_summit'
+CATALOG = 'mlb_demos'
 DATABASE_L = 'mlb_gumbo_landing'
 DATABASE_B = 'mlb_gumbo_bronze'
 DATABASE_S = 'mlb_gumbo_silver'
@@ -535,13 +535,13 @@ spark.sql(f"""
 #     sp.strike_probability             -- Model-predicted probability of a strike
 
 # FROM
-#     mlb_tech_summit.mlb_gumbo_silver.game_data g
+#     mlb_demos.mlb_gumbo_silver.game_data g
 # JOIN
-#     mlb_tech_summit.mlb_gumbo_silver.pitch_data p
+#     mlb_demos.mlb_gumbo_silver.pitch_data p
 # ON
 #     g.game_pk = p.game_pk
 # LEFT JOIN
-#     mlb_tech_summit.mlb_gumbo_silver.strike_probability sp
+#     mlb_demos.mlb_gumbo_silver.strike_probability sp
 # ON
 #     g.game_pk = sp.game_pk
 #     AND p.at_bat_index = sp.at_bat_index

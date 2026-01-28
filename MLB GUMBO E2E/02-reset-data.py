@@ -9,7 +9,7 @@ import pyspark.sql.functions as F
 print(f"Resetting All Data")
 
 # Global variables
-CATALOG = 'mlb_tech_summit'
+CATALOG = 'mlb_demos'
 DATABASE_L = 'mlb_gumbo_landing'
 DATABASE_B = 'mlb_gumbo_bronze'
 DATABASE_S = 'mlb_gumbo_silver'

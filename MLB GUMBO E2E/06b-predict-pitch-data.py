@@ -15,7 +15,7 @@ import pyspark.sql.functions as F
 from datetime import datetime
 
 # Predictions
-import mlflow.pyfunc
+# import mlflow.pyfunc
 import pandas as pd
 from pyspark.sql.functions import pandas_udf
 from pyspark.sql.types import FloatType
@@ -60,7 +60,7 @@ df = df.dropna()
 import numpy as np
 
 # Serving endpoint configuration
-serving_endpoint_url = "https://fe-vm-vdm-classic-212e0j.cloud.databricks.com/serving-endpoints/mlb-summit-strike-probability/invocations"
+serving_endpoint_url = "https://fe-sandbox-stable-classic-jy18p5.cloud.databricks.com/serving-endpoints/mlb-demos-strike-probability/invocations"
 
 # Get Databricks token for authentication
 token = dbutils.notebook.entry_point.getDbutils().notebook().getContext().apiToken().get()
@@ -132,7 +132,7 @@ df_with_predictions = df.withColumn(
 from delta.tables import DeltaTable
 
 def upsert_to_silver(batch_df, batch_id):
-    silver_table_name = "mlb_tech_summit.mlb_gumbo_silver.strike_probability"  # Unity Catalog table name
+    silver_table_name = "mlb_demos.mlb_gumbo_silver.strike_probability"  # Unity Catalog table name
 
     # Reference the Delta table
     silver_table = DeltaTable.forName(spark, silver_table_name)

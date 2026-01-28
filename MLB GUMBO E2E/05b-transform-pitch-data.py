@@ -189,7 +189,7 @@ df = spark.sql(f"""
 
 # Define the upsert function
 def upsert_to_silver(batch_df, batch_id):
-    silver_table_name = "mlb_tech_summit.mlb_gumbo_silver.pitch_data"  # Unity Catalog table name
+    silver_table_name = "mlb_demos.mlb_gumbo_silver.pitch_data"  # Unity Catalog table name
     temp_table_name = "temp_silver_mlb_gumbo_pitch_data"
 
     # Register the incoming batch as a temporary view
