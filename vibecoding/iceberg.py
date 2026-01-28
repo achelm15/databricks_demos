@@ -2,6 +2,7 @@ import os
 import requests
 import pyarrow as pa
 from datetime import datetime
+from faker import Faker
 from pyiceberg.catalog import load_catalog
 from pyiceberg.schema import Schema
 from pyiceberg.types import NestedField, StringType, IntegerType, TimestampType
@@ -171,12 +172,16 @@ arrow_schema = pa.schema([
     pa.field("created_at", pa.timestamp('us'), nullable=False)
 ])
 
-# Create sample data with proper types
+# Create sample data with proper types - generating 100 rows with Faker
+# Faker generates realistic fake data (names, emails, dates, etc.)
+fake = Faker()
+num_rows = 100
+
 data = {
-    "user_id": pa.array([1, 2, 3], type=pa.int32()),
-    "username": pa.array(["alice", "bob", "charlie"], type=pa.string()),
-    "email": pa.array(["alice@example.com", "bob@example.com", "charlie@example.com"], type=pa.string()),
-    "created_at": pa.array([datetime.now(), datetime.now(), datetime.now()], type=pa.timestamp('us'))
+    "user_id": pa.array(range(1, num_rows + 1), type=pa.int32()),
+    "username": pa.array([fake.user_name() for _ in range(num_rows)], type=pa.string()),
+    "email": pa.array([fake.email() for _ in range(num_rows)], type=pa.string()),
+    "created_at": pa.array([fake.date_time_this_year() for _ in range(num_rows)], type=pa.timestamp('us'))
 }
 
 # Convert to Arrow table and append to Iceberg table

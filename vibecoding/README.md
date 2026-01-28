@@ -189,7 +189,7 @@ bash /path/to/polaris/restart-polaris-with-aws.sh
 
 ```bash
 conda activate your-env  # or use venv
-pip install pyiceberg requests pyarrow
+pip install pyiceberg requests pyarrow faker
 ```
 
 ### 7. Update Configuration in `iceberg.py`
@@ -222,20 +222,20 @@ python vibecoding/iceberg.py
 🗑️  Dropped existing table: demo.users
 ✅ Created table: demo.users
 📍 Table location: s3://polaris-iceberg-dev/demo/users
-✅ Inserted 3 rows into demo.users
+✅ Inserted 100 rows into demo.users
 
 📊 Table scan results:
 [
-  [1, 2, 3]
+  [1, 2, 3, 4, 5, ... 96, 97, 98, 99, 100]
 ]
 [
-  ["alice", "bob", "charlie"]
+  ["kgonzalez", "randy20", "hcastillo", ...]
 ]
 [
-  ["alice@example.com", "bob@example.com", "charlie@example.com"]
+  ["reynoldsfernando@example.net", "tracyfreeman@example.net", ...]
 ]
 [
-  [2026-01-28 02:12:46.586340, ...]
+  [2026-01-17 08:27:34.223601, 2026-01-25 00:03:43.022788, ...]
 ]
 ```
 
@@ -247,8 +247,9 @@ python vibecoding/iceberg.py
 4. **Grants Permissions** - ensures the catalog admin role can manage content
 5. **Creates a Namespace** - like a database, organizes tables
 6. **Creates an Iceberg Table** - defines schema with strongly-typed fields
-7. **Inserts Data** - writes sample records using PyArrow
-8. **Queries Data** - reads the data back from S3
+7. **Generates 100 Rows of Fake Data** - uses Faker to create realistic usernames, emails, and timestamps
+8. **Inserts Data** - writes the generated records to S3 using PyArrow
+9. **Queries Data** - reads the data back from S3
 
 ## File Structure
 
