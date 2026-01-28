@@ -1,0 +1,23 @@
+# ==============================================================================
+# Docker Compose Override for Apache Polaris with AWS Credentials
+# ==============================================================================
+# This file should be placed in: polaris/getting-started/jdbc/
+#
+# It extends the main docker-compose.yml to add AWS environment variables
+# to the Polaris container, enabling it to access S3.
+#
+# Usage:
+#   1. Copy this file to: polaris/getting-started/jdbc/docker-compose.override.yml
+#   2. Docker Compose will automatically merge it with the main compose files
+#   3. Export AWS credentials as environment variables before running docker-compose up
+# ==============================================================================
+
+services:
+  polaris:
+    environment:
+      # AWS credentials will be passed from your shell environment
+      # Make sure to export these before running docker-compose up
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: us-east-1
+      AWS_DEFAULT_REGION: us-east-1
