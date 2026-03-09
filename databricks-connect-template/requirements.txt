@@ -1,0 +1,8 @@
+# Databricks Connect — bundles PySpark + Delta, do NOT also install pyspark separately
+databricks-connect>=15.4.0
+
+# Databricks SDK — REST API access (jobs, catalogs, clusters, etc.)
+databricks-sdk>=0.20.0
+
+# Load .env files for local credential overrides (optional)
+python-dotenv>=1.0.0
