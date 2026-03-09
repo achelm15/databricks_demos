@@ -1,0 +1,13 @@
+# Databricks Connect — bundles Spark Connect client; MUST uninstall pyspark first (conflicts)
+# Version must match your cluster runtime (18.x for DBR 18.x / Serverless 18.0)
+# See: https://docs.databricks.com/en/dev-tools/databricks-connect/python/troubleshooting#conflicting-pyspark-installations
+databricks-connect>=18.0.0
+
+# Databricks SDK — REST API (file upload, catalog/schema management)
+databricks-sdk>=0.20.0
+
+# Load .env for local credential overrides
+python-dotenv>=1.0.0
+
+# Excel file generation (sample data only — NOT needed for reading in Databricks)
+openpyxl>=3.1.0
