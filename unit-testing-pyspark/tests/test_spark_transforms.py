@@ -12,11 +12,12 @@ HOW SPARK TESTS WORK:
   - .collect() converts a Spark DataFrame to a Python list of Row
     objects so we can inspect individual values
 
-WHY LOCAL SPARK:
-  - SparkSession.builder.master("local[*]") runs Spark on your laptop
-  - No cluster, no Databricks workspace, no network calls
-  - Fast feedback loop — tests finish in seconds
-  - The same PySpark code runs identically on a cluster
+DATABRICKS CONNECT:
+  - DatabricksSession.builder.getOrCreate() connects to a remote cluster
+    or serverless compute via Databricks Connect
+  - Your code runs locally, but Spark operations execute on Databricks
+  - Same PySpark API — no code changes needed in your transformations
+  - Configure via ~/.databrickscfg or environment variables
 """
 
 import pytest

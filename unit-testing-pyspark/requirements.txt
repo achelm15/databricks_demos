@@ -1,4 +1,4 @@
-databricks-connect>=18.0.0
+databricks-connect==18.0.*
 databricks-sdk>=0.20.0
 python-dotenv>=1.0.0
 pytest>=8.0.0

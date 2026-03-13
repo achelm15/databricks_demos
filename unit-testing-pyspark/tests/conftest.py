@@ -14,7 +14,7 @@ import pytest
 # Add parent directory so we can import baseball_stats
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from pyspark.sql import SparkSession
+from databricks.connect import DatabricksSession
 from pyspark.sql.types import (
     StructType, StructField, StringType, IntegerType, DoubleType
 )
@@ -23,23 +23,21 @@ from pyspark.sql.types import (
 @pytest.fixture(scope="session")
 def spark():
     """
-    Create a local SparkSession for testing.
+    Create a Spark session via Databricks Connect for testing.
 
     scope="session" means this fixture is created ONCE and shared across
     ALL tests in the entire test run. This is important because starting
-    a SparkSession is slow (~2-3 seconds), and we don't want to pay that
-    cost for every single test.
+    a SparkSession is slow, and we don't want to pay that cost for every
+    single test.
 
-    This uses a LOCAL Spark — no Databricks cluster needed. That's the
-    whole point: unit tests should run fast, anywhere, with no external
-    dependencies.
+    This uses Databricks Connect — your code runs locally but Spark
+    operations execute on a remote Databricks cluster or serverless
+    compute. Configure your connection via:
+      - ~/.databrickscfg profile
+      - Environment variables (DATABRICKS_HOST, DATABRICKS_CLUSTER_ID)
+      - Or the Databricks SDK's default auth chain
     """
-    session = (
-        SparkSession.builder
-        .master("local[*]")
-        .appName("baseball-stats-tests")
-        .getOrCreate()
-    )
+    session = DatabricksSession.builder.serverless(True).getOrCreate()
     yield session
     session.stop()
 
