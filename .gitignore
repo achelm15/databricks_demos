@@ -1,5 +1,6 @@
 .DS_Store
 *config.py
+share_profile.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
