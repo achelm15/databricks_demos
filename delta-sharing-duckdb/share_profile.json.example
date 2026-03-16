@@ -1,0 +1,6 @@
+{
+  "shareCredentialsVersion": 1,
+  "bearerToken": "YOUR_BEARER_TOKEN_HERE",
+  "endpoint": "https://your-workspace.cloud.databricks.com/api/2.0/delta-sharing/metastores/your-metastore-id",
+  "expirationTime": "2026-06-24T00:00:00.000Z"
+}
