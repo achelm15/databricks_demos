@@ -1,5 +1,5 @@
 """
-DLT Pipeline: Enforce Uniqueness with Expectations
+LDP (Lakeflow Declarative Pipelines) Pipeline: Enforce Uniqueness with Expectations
 
 Think of this as the lakehouse equivalent of your Oracle/SQL Server constraint stack:
   - Bronze: raw landing zone (no constraints — like a staging table)
