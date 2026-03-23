@@ -26,7 +26,10 @@ from pyspark.sql.functions import col, count, lit
     comment="Raw customer batch — no quality checks applied (staging table equivalent)",
 )
 def customers_bronze():
-    return spark.read.table(f"{dlt.config['uc_catalog']}.{dlt.config['uc_schema']}.new_customers_batch")
+    # Pipeline config is passed via spark.conf, not dlt.config
+    catalog = spark.conf.get("uc_catalog")
+    schema = spark.conf.get("uc_schema")
+    return spark.read.table(f"{catalog}.{schema}.new_customers_batch")
 
 
 # -- Silver: basic quality checks (drop bad rows) ------------------------------
