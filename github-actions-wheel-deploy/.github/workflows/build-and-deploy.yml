@@ -5,16 +5,16 @@ on:
   push:
     branches: [main]
     paths:
-      - "astros_utils/**"
+      - "my_utils/**"
   workflow_dispatch:  # allows manual trigger from GitHub UI
 
 env:
-  PACKAGE_DIR: astros_utils
+  PACKAGE_DIR: my_utils
   # Where the wheel lands in your Databricks workspace
   # Option A: Unity Catalog Volume (recommended)
-  DEPLOY_PATH: /Volumes/astros_catalog/shared/wheels
+  DEPLOY_PATH: /Volumes/my_catalog/shared/wheels
   # Option B: DBFS (legacy)
-  # DEPLOY_PATH: dbfs:/libs/astros_utils
+  # DEPLOY_PATH: dbfs:/libs/my_utils
 
 jobs:
   build:

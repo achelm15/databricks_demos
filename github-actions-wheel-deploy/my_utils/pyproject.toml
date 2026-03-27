@@ -3,9 +3,9 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "astros_utils"
+name = "my_utils"
 version = "0.1.0"
-description = "Internal utilities for Astros data pipelines"
+description = "Internal utilities for data pipelines on Databricks"
 requires-python = ">=3.9"
 dependencies = []
 

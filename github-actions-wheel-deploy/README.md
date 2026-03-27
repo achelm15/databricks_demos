@@ -37,9 +37,9 @@ to Databricks** — all through GitHub Actions.
 github-actions-wheel-deploy/
 ├── .github/workflows/
 │   └── build-and-deploy.yml    ← GitHub Actions workflow
-├── astros_utils/               ← Sample Python package
+├── my_utils/               ← Sample Python package
 │   ├── pyproject.toml
-│   └── astros_utils/
+│   └── my_utils/
 │       ├── __init__.py
 │       └── transforms.py       ← Sample PySpark transforms
 ├── .env.example
@@ -61,7 +61,7 @@ In your GitHub repo, go to **Settings → Secrets and variables → Actions** an
 
 ```sql
 -- Run in a Databricks notebook or SQL editor
-CREATE VOLUME IF NOT EXISTS astros_catalog.shared.wheels;
+CREATE VOLUME IF NOT EXISTS my_catalog.shared.wheels;
 ```
 
 ### 3. Configure the workflow
@@ -76,16 +76,16 @@ Once the wheel is in a Volume, reference it from notebooks or jobs:
 
 ```python
 # In a Databricks notebook
-%pip install /Volumes/astros_catalog/shared/wheels/astros_utils-0.1.0-py3-none-any.whl
+%pip install /Volumes/my_catalog/shared/wheels/my_utils-0.1.0-py3-none-any.whl
 
-from astros_utils.transforms import add_game_date_parts, calculate_batting_avg
+from my_utils.transforms import add_game_date_parts, calculate_batting_avg
 ```
 
 Or install it in a cluster init script so it's always available:
 
 ```bash
 #!/bin/bash
-pip install /Volumes/astros_catalog/shared/wheels/astros_utils-0.1.0-py3-none-any.whl
+pip install /Volumes/my_catalog/shared/wheels/my_utils-0.1.0-py3-none-any.whl
 ```
 
 Or attach it as a cluster library via the UI:
@@ -109,16 +109,16 @@ For production, consider one of these patterns:
 
 **Option A: Version in the filename (recommended)**
 ```
-/Volumes/.../wheels/astros_utils-0.1.0-py3-none-any.whl
-/Volumes/.../wheels/astros_utils-0.2.0-py3-none-any.whl
+/Volumes/.../wheels/my_utils-0.1.0-py3-none-any.whl
+/Volumes/.../wheels/my_utils-0.2.0-py3-none-any.whl
 ```
 Bump the version in `pyproject.toml` on each release. Old versions stay available
 for rollback. Notebooks pin to a specific version.
 
 **Option B: Latest + versioned**
 ```
-/Volumes/.../wheels/astros_utils-latest.whl       ← overwritten each push
-/Volumes/.../wheels/astros_utils-0.1.0.whl        ← archived
+/Volumes/.../wheels/my_utils-latest.whl       ← overwritten each push
+/Volumes/.../wheels/my_utils-0.1.0.whl        ← archived
 ```
 Dev notebooks use `latest`, production jobs pin to a version.
 
@@ -162,5 +162,5 @@ which can bundle wheels alongside job definitions in a single `databricks.yml`.
 
 ## Data Disclaimer
 
-The sample `astros_utils` package contains placeholder PySpark functions for demonstration
-purposes only. It is not affiliated with any real organization.
+The sample `my_utils` package contains placeholder PySpark functions for demonstration
+purposes only. Replace with your own package name, transforms, and catalog paths.
