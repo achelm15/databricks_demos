@@ -1,0 +1,79 @@
+name: Build & Deploy Wheel to Databricks
+
+# Triggers on push to main or manual dispatch
+on:
+  push:
+    branches: [main]
+    paths:
+      - "astros_utils/**"
+  workflow_dispatch:  # allows manual trigger from GitHub UI
+
+env:
+  PACKAGE_DIR: astros_utils
+  # Where the wheel lands in your Databricks workspace
+  # Option A: Unity Catalog Volume (recommended)
+  DEPLOY_PATH: /Volumes/astros_catalog/shared/wheels
+  # Option B: DBFS (legacy)
+  # DEPLOY_PATH: dbfs:/libs/astros_utils
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build tools
+        run: pip install build
+
+      - name: Build wheel
+        run: python -m build --wheel ${{ env.PACKAGE_DIR }}
+
+      - name: Upload wheel as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheel
+          path: ${{ env.PACKAGE_DIR }}/dist/*.whl
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    # Only deploy on push to main (not on PRs)
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Download wheel artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: wheel
+          path: dist
+
+      - name: Install Databricks CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+
+      - name: Upload wheel to Databricks
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+        run: |
+          WHEEL_FILE=$(ls dist/*.whl)
+          WHEEL_NAME=$(basename $WHEEL_FILE)
+          echo "Deploying $WHEEL_NAME to ${{ env.DEPLOY_PATH }}"
+
+          # Upload to Unity Catalog Volume
+          databricks fs cp "$WHEEL_FILE" "${{ env.DEPLOY_PATH }}/$WHEEL_NAME" --overwrite
+
+          echo "Deployed: ${{ env.DEPLOY_PATH }}/$WHEEL_NAME"
+
+      # Optional: restart a running cluster so it picks up the new wheel
+      # - name: Restart cluster
+      #   env:
+      #     DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      #     DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+      #   run: |
+      #     databricks clusters restart --cluster-id ${{ secrets.CLUSTER_ID }}
