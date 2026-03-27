@@ -1,0 +1,5 @@
+databricks-connect>=18.0.0,<18.1.0
+databricks-sdk>=0.20.0
+python-dotenv>=1.0.0
+faker>=25.0.0
+databricks-zerobus-ingest-sdk>=1.1.0
