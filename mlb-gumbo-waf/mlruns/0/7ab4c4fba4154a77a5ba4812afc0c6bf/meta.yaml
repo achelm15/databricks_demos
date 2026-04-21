@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/alexander.booth/Documents/Repos/databricks_demos/mlb-gumbo-waf/mlruns/0/7ab4c4fba4154a77a5ba4812afc0c6bf/artifacts
+end_time: 1776805103943
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 7ab4c4fba4154a77a5ba4812afc0c6bf
+run_name: strike_probability_2025
+run_uuid: 7ab4c4fba4154a77a5ba4812afc0c6bf
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1776805038845
+status: 3
+tags: []
+user_id: alexander.booth

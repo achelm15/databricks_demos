@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1380" viewBox="0 0 1400 1380">
+<rect x="0" y="0" width="1400" height="1380" fill="#f8f9fb" stroke="none" stroke-width="2" rx="0"/>
+<text x="700" y="44" font-family="Arial, Helvetica, sans-serif" font-size="24" fill="#1e50a0" text-anchor="middle" font-weight="700">MLB GUMBO — WAF Accelerator</text>
+<text x="700" y="72" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#3c465a" text-anchor="middle" font-weight="normal">End-to-end pitch analytics on Databricks, mapped to the Well-Architected Framework</text>
+<rect x="70" y="110" width="720" height="150" fill="#ecf6ff" stroke="#4285f4" stroke-width="3" rx="14"/>
+<rect x="73" y="124" width="7" height="122" fill="#4285f4" stroke="none" stroke-width="2" rx="3"/>
+<rect x="680" y="124" width="93" height="22" fill="white" stroke="#a0aabe" stroke-width="1" rx="6"/><text x="726" y="139" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#505a6e" text-anchor="middle" font-weight="normal">Notebook 01</text>
+<text x="430" y="156" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#1e50a0" text-anchor="middle" font-weight="700">MLB GUMBO API  -&gt;  UC Volume</text>
+<text x="430" y="184" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#3c465a" text-anchor="middle" font-weight="normal">statsapi.mlb.com schedule + live feeds, partitioned by ingest date</text>
+<text x="430" y="202" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#3c465a" text-anchor="middle" font-weight="normal">Parameterized season / team / date window via .env</text>
+<line x1="430" y1="272" x2="430" y2="266" stroke="#5a6478" stroke-width="3" stroke-linecap="round"/><polygon points="430,278 421,266 439,266" fill="#5a6478"/>
+<rect x="336" y="264" width="188" height="22" fill="white" stroke="#a0aabe" stroke-width="1" rx="5"/>
+<text x="430" y="279" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#3c465a" text-anchor="middle" font-weight="normal">Auto Loader availableNow</text>
+<rect x="70" y="290" width="720" height="140" fill="#fff3e0" stroke="#b7692a" stroke-width="3" rx="14"/>
+<rect x="73" y="304" width="7" height="112" fill="#b7692a" stroke="none" stroke-width="2" rx="3"/>
+<rect x="680" y="304" width="93" height="22" fill="white" stroke="#a0aabe" stroke-width="1" rx="6"/><text x="726" y="319" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#505a6e" text-anchor="middle" font-weight="normal">Notebook 02</text>
+<text x="430" y="336" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#783c0a" text-anchor="middle" font-weight="700">Bronze  -  VARIANT Delta</text>
+<text x="430" y="364" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#3c465a" text-anchor="middle" font-weight="normal">Single VARIANT column + source-file metadata</text>
+<text x="430" y="382" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#3c465a" text-anchor="middle" font-weight="normal">Liquid clustered on file_batch_time, _rescued safety net</text>
+<line x1="430" y1="442" x2="430" y2="436" stroke="#5a6478" stroke-width="3" stroke-linecap="round"/><polygon points="430,448 421,436 439,436" fill="#5a6478"/>
+<rect x="333" y="434" width="195" height="22" fill="white" stroke="#a0aabe" stroke-width="1" rx="5"/>
+<text x="430" y="449" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#3c465a" text-anchor="middle" font-weight="normal">Typed extraction + MD5 SK</text>
+<rect x="70" y="460" width="720" height="140" fill="#f0f0f5" stroke="#78829b" stroke-width="3" rx="14"/>
+<rect x="73" y="474" width="7" height="112" fill="#78829b" stroke="none" stroke-width="2" rx="3"/>
+<rect x="680" y="474" width="93" height="22" fill="white" stroke="#a0aabe" stroke-width="1" rx="6"/><text x="726" y="489" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#505a6e" text-anchor="middle" font-weight="normal">Notebook 03</text>
+<text x="430" y="506" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#323c50" text-anchor="middle" font-weight="700">Silver  -  Typed + Constrained</text>
+<text x="430" y="534" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#3c465a" text-anchor="middle" font-weight="normal">game_data + pitch_data, RELY PK/FK, CHECK constraints</text>
+<text x="430" y="552" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#3c465a" text-anchor="middle" font-weight="normal">Clustered on (season, official_date[, game_pk])</text>
+<line x1="430" y1="612" x2="430" y2="606" stroke="#5a6478" stroke-width="3" stroke-linecap="round"/><polygon points="430,618 421,606 439,606" fill="#5a6478"/>
+<rect x="350" y="604" width="160" height="22" fill="white" stroke="#a0aabe" stroke-width="1" rx="5"/>
+<text x="430" y="619" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#3c465a" text-anchor="middle" font-weight="normal">Star schema modeling</text>
+<rect x="70" y="630" width="720" height="140" fill="#fffcdc" stroke="#c89b00" stroke-width="3" rx="14"/>
+<rect x="73" y="644" width="7" height="112" fill="#c89b00" stroke="none" stroke-width="2" rx="3"/>
+<rect x="680" y="644" width="93" height="22" fill="white" stroke="#a0aabe" stroke-width="1" rx="6"/><text x="726" y="659" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#505a6e" text-anchor="middle" font-weight="normal">Notebook 04</text>
+<text x="430" y="676" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#6e5000" text-anchor="middle" font-weight="700">Gold  -  Star Schema + Views</text>
+<text x="430" y="704" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#3c465a" text-anchor="middle" font-weight="normal">dim_team / pitcher / batter / venue / date</text>
+<text x="430" y="722" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#3c465a" text-anchor="middle" font-weight="normal">fact_games + fact_pitches + 3 pre-agg views</text>
+<line x1="430" y1="782" x2="430" y2="776" stroke="#5a6478" stroke-width="3" stroke-linecap="round"/><polygon points="430,788 421,776 439,776" fill="#5a6478"/>
+<rect x="326" y="774" width="209" height="22" fill="white" stroke="#a0aabe" stroke-width="1" rx="5"/>
+<text x="430" y="789" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#3c465a" text-anchor="middle" font-weight="normal">Governance + DQ + Perf/Cost</text>
+<rect x="70" y="800" width="720" height="150" fill="#f0fff0" stroke="#34a853" stroke-width="3" rx="14"/>
+<rect x="73" y="814" width="7" height="122" fill="#34a853" stroke="none" stroke-width="2" rx="3"/>
+<rect x="680" y="814" width="128" height="22" fill="white" stroke="#a0aabe" stroke-width="1" rx="6"/><text x="744" y="829" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#505a6e" text-anchor="middle" font-weight="normal">05  ·  06  ·  07</text>
+<text x="430" y="846" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#146428" text-anchor="middle" font-weight="700">WAF layer  -  Govern / Quality / Cost</text>
+<text x="430" y="874" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#3c465a" text-anchor="middle" font-weight="normal">05: tags, comments, PII tag, column mask, lineage</text>
+<text x="430" y="892" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#3c465a" text-anchor="middle" font-weight="normal">06: DQ expectations persisted; 07: chargeback + PO</text>
+<line x1="430" y1="962" x2="430" y2="956" stroke="#5a6478" stroke-width="3" stroke-linecap="round"/><polygon points="430,968 421,956 439,956" fill="#5a6478"/>
+<rect x="347" y="954" width="167" height="22" fill="white" stroke="#a0aabe" stroke-width="1" rx="5"/>
+<text x="430" y="969" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#3c465a" text-anchor="middle" font-weight="normal">Feature / label build</text>
+<rect x="70" y="980" width="720" height="140" fill="#efe9fe" stroke="#6b4ed9" stroke-width="3" rx="14"/>
+<rect x="73" y="994" width="7" height="112" fill="#6b4ed9" stroke="none" stroke-width="2" rx="3"/>
+<rect x="680" y="994" width="93" height="22" fill="white" stroke="#a0aabe" stroke-width="1" rx="6"/><text x="726" y="1009" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#505a6e" text-anchor="middle" font-weight="normal">Notebook 08</text>
+<text x="430" y="1026" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#361f8a" text-anchor="middle" font-weight="700">ML  -  Strike Probability in UC</text>
+<text x="430" y="1054" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#3c465a" text-anchor="middle" font-weight="normal">MLflow run, UC Model Registry, champion/challenger alias</text>
+<text x="430" y="1072" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#3c465a" text-anchor="middle" font-weight="normal">Batch inference back into gold.pitch_strike_probability</text>
+<line x1="430" y1="1132" x2="430" y2="1126" stroke="#5a6478" stroke-width="3" stroke-linecap="round"/><polygon points="430,1138 421,1126 439,1126" fill="#5a6478"/>
+<rect x="396" y="1124" width="69" height="22" fill="white" stroke="#a0aabe" stroke-width="1" rx="5"/>
+<text x="430" y="1139" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#3c465a" text-anchor="middle" font-weight="normal">Publish</text>
+<rect x="70" y="1150" width="720" height="160" fill="#ffebee" stroke="#ff4353" stroke-width="3" rx="14"/>
+<rect x="73" y="1164" width="7" height="132" fill="#ff4353" stroke="none" stroke-width="2" rx="3"/>
+<rect x="680" y="1164" width="128" height="22" fill="white" stroke="#a0aabe" stroke-width="1" rx="6"/><text x="744" y="1179" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#505a6e" text-anchor="middle" font-weight="normal">09  ·  10  ·  11</text>
+<text x="430" y="1196" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#b41428" text-anchor="middle" font-weight="700">Consumer surface  -  BI, Genie, WAF recap</text>
+<text x="430" y="1224" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#3c465a" text-anchor="middle" font-weight="normal">09 Lakeview dashboard (API)  +  10 Genie space (API)</text>
+<text x="430" y="1242" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#3c465a" text-anchor="middle" font-weight="normal">11 pillar-by-pillar walkthrough for the stage</text>
+<rect x="850" y="110" width="480" height="1250" fill="white" stroke="#c8c8d2" stroke-width="2" rx="16"/>
+<text x="1090" y="144" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#1e50a0" text-anchor="middle" font-weight="700">Well-Architected Framework</text>
+<text x="1090" y="166" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#3c465a" text-anchor="middle" font-weight="normal">Seven pillars, mapped to notebooks</text>
+<rect x="870" y="190" width="440" height="110" fill="#f7fafc" stroke="#34a853" stroke-width="2" rx="10"/>
+<rect x="874" y="200" width="6" height="90" fill="#34a853" stroke="none" stroke-width="2" rx="3"/>
+<text x="894" y="220" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#34a853" text-anchor="start" font-weight="700">1. Data Governance</text>
+<text x="894" y="246" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#3c465a" text-anchor="start" font-weight="normal">Notebooks:</text>
+<text x="972" y="246" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#505a6e" text-anchor="start" font-weight="600">00, 03, 04, 05, 10</text>
+<text x="894" y="272" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#3c465a" text-anchor="start" font-weight="normal">Comments, tags, RELY PK/FK, lineage — all in UC.</text>
+<rect x="870" y="314" width="440" height="110" fill="#f7fafc" stroke="#4285f4" stroke-width="2" rx="10"/>
+<rect x="874" y="324" width="6" height="90" fill="#4285f4" stroke="none" stroke-width="2" rx="3"/>
+<text x="894" y="344" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#4285f4" text-anchor="start" font-weight="700">2. Interoperability &amp; Usability</text>
+<text x="894" y="370" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#3c465a" text-anchor="start" font-weight="normal">Notebooks:</text>
+<text x="972" y="370" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#505a6e" text-anchor="start" font-weight="600">04, 09, 10</text>
+<text x="894" y="396" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#3c465a" text-anchor="start" font-weight="normal">Star schema feeds AI/BI + Genie.</text>
+<rect x="870" y="438" width="440" height="110" fill="#f7fafc" stroke="#b7692a" stroke-width="2" rx="10"/>
+<rect x="874" y="448" width="6" height="90" fill="#b7692a" stroke="none" stroke-width="2" rx="3"/>
+<text x="894" y="468" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#b7692a" text-anchor="start" font-weight="700">3. Operational Excellence</text>
+<text x="894" y="494" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#3c465a" text-anchor="start" font-weight="normal">Notebooks:</text>
+<text x="972" y="494" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#505a6e" text-anchor="start" font-weight="600">01, 02, 08, 09, 10</text>
+<text x="894" y="520" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#3c465a" text-anchor="start" font-weight="normal">Auto Loader + .env + MLflow aliases. || Dashboard + Genie are code.</text>
+<text x="894" y="536" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#3c465a" text-anchor="start" font-weight="normal">Dashboard + Genie are code.</text>
+<rect x="870" y="562" width="440" height="110" fill="#f7fafc" stroke="#ff4353" stroke-width="2" rx="10"/>
+<rect x="874" y="572" width="6" height="90" fill="#ff4353" stroke="none" stroke-width="2" rx="3"/>
+<text x="894" y="592" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#ff4353" text-anchor="start" font-weight="700">4. Security, Compliance &amp; Privacy</text>
+<text x="894" y="618" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#3c465a" text-anchor="start" font-weight="normal">Notebooks:</text>
+<text x="972" y="618" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#505a6e" text-anchor="start" font-weight="600">05</text>
+<text x="894" y="644" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#3c465a" text-anchor="start" font-weight="normal">PII column tag + column mask on attendance.</text>
+<rect x="870" y="686" width="440" height="110" fill="#f7fafc" stroke="#c89b00" stroke-width="2" rx="10"/>
+<rect x="874" y="696" width="6" height="90" fill="#c89b00" stroke="none" stroke-width="2" rx="3"/>
+<text x="894" y="716" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#c89b00" text-anchor="start" font-weight="700">5. Reliability</text>
+<text x="894" y="742" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#3c465a" text-anchor="start" font-weight="normal">Notebooks:</text>
+<text x="972" y="742" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#505a6e" text-anchor="start" font-weight="600">02, 03, 06</text>
+<text x="894" y="768" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#3c465a" text-anchor="start" font-weight="normal">CHECK constraints, MD5 SKs, DQ results. || Schema-drift rescue column.</text>
+<text x="894" y="784" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#3c465a" text-anchor="start" font-weight="normal">Schema-drift rescue column.</text>
+<rect x="870" y="810" width="440" height="110" fill="#f7fafc" stroke="#6b4ed9" stroke-width="2" rx="10"/>
+<rect x="874" y="820" width="6" height="90" fill="#6b4ed9" stroke="none" stroke-width="2" rx="3"/>
+<text x="894" y="840" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#6b4ed9" text-anchor="start" font-weight="700">6. Performance Efficiency</text>
+<text x="894" y="866" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#3c465a" text-anchor="start" font-weight="normal">Notebooks:</text>
+<text x="972" y="866" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#505a6e" text-anchor="start" font-weight="600">02, 03, 04, 07</text>
+<text x="894" y="892" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#3c465a" text-anchor="start" font-weight="normal">Liquid clustering + Predictive Optimization.</text>
+<rect x="870" y="934" width="440" height="110" fill="#f7fafc" stroke="#0b8043" stroke-width="2" rx="10"/>
+<rect x="874" y="944" width="6" height="90" fill="#0b8043" stroke="none" stroke-width="2" rx="3"/>
+<text x="894" y="964" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#0b8043" text-anchor="start" font-weight="700">7. Cost Optimization</text>
+<text x="894" y="990" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#3c465a" text-anchor="start" font-weight="normal">Notebooks:</text>
+<text x="972" y="990" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#505a6e" text-anchor="start" font-weight="600">00, 07</text>
+<text x="894" y="1016" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#3c465a" text-anchor="start" font-weight="normal">Tag-based chargeback + removeAfter scanner.</text>
+<text x="700" y="1352" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#3c465a" text-anchor="middle" font-weight="normal">Serverless Databricks Connect  ·  Unity Catalog  ·  Auto Loader  ·  Delta / Iceberg  ·  Lakeview  ·  Genie  ·  Models in UC</text>
+</svg>

@@ -1,0 +1,40 @@
+artifact_path: model
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.12.10
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.6.1
+is_signature_from_type_hint: false
+mlflow_version: 2.22.0
+model_size_bytes: 145378
+model_uuid: eba1f7b959f140258c7e18d1f52d8a90
+prompts: null
+run_id: e8e6cd28c177438db23aaafa2615d014
+saved_input_example_info:
+  artifact_path: input_example.json
+  pandas_orient: split
+  serving_input_path: serving_input_example.json
+  type: dataframe
+signature:
+  inputs: '[{"type": "double", "name": "start_speed_mph", "required": true}, {"type":
+    "double", "name": "spin_rate_rpm", "required": true}, {"type": "double", "name":
+    "plate_x", "required": true}, {"type": "double", "name": "plate_z", "required":
+    true}, {"type": "double", "name": "sz_top", "required": true}, {"type": "double",
+    "name": "sz_bot", "required": true}, {"type": "double", "name": "break_vertical_induced",
+    "required": true}, {"type": "double", "name": "break_horizontal", "required":
+    true}, {"type": "double", "name": "extension_ft", "required": true}, {"type":
+    "string", "name": "batter_side", "required": true}, {"type": "string", "name":
+    "pitcher_hand", "required": true}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "float64", "shape": [-1]}}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2026-04-21 19:58:27.118907'
