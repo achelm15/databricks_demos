@@ -77,6 +77,15 @@ Built for NHL clubs (and other SportLogiq subscribers) that already have credent
 
 Run them in order. 02 depends on 01, 03 on 02, etc.
 
+## Sanity-check without API credentials
+
+Don't have SportLogiq creds yet? `tests/generate_fake_data.ipynb` lays down a
+small synthetic corpus in the same UC Volume paths the real ingest writes to,
+so notebooks 02-07 run end-to-end against fake data. Useful for proving the
+bronze→gold→dashboard→Genie code is structurally sound before creds arrive.
+See `tests/README.md` for the workflow (skip 00 + 01, run the test notebook,
+then 02-07 normally).
+
 ## Running mode 1 — Local (Databricks Connect)
 
 The default. Notebooks run on your laptop, compute happens on a Databricks Serverless warehouse you point them at.
