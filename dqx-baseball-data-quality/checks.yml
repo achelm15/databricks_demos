@@ -1,0 +1,74 @@
+# Hand-written DQX checks for the baseball pitches dataset.
+# Notebook 02 also writes a generated version of this file (checks.generated.yml)
+# from DQProfiler output — compare them to see what the profiler picked up.
+
+# 1. Required identifiers — error-level
+- criticality: error
+  check:
+    function: is_not_null_and_not_empty
+    for_each_column:
+      - at_bat_id
+      - game_id
+      - pitcher_id
+      - batter_id
+
+# 2. Pitch speed must be physically plausible (40–110 mph)
+- name: pitch_speed_in_range
+  criticality: error
+  check:
+    function: is_in_range
+    arguments:
+      column: pitch_speed_mph
+      min_limit: 40
+      max_limit: 110
+
+# 3. Inning is 1–20 (anything higher = upstream parser bug)
+- criticality: warn
+  check:
+    function: is_in_range
+    arguments:
+      column: inning
+      min_limit: 1
+      max_limit: 20
+
+# 4. Batting average must live on [0.0, 1.0]
+- criticality: error
+  check:
+    function: is_in_range
+    arguments:
+      column: batting_avg
+      min_limit: 0.0
+      max_limit: 1.0
+
+# 5. Pitch type must come from the known enum
+- name: pitch_type_in_enum
+  criticality: warn
+  check:
+    function: is_in_list
+    arguments:
+      column: pitch_type
+      allowed:
+        - FF   # four-seam fastball
+        - SI   # sinker
+        - SL   # slider
+        - CU   # curveball
+        - CH   # changeup
+        - FC   # cutter
+        - KC   # knuckle curve
+        - FS   # splitter
+
+# 6. Game date can't be in the future
+- criticality: error
+  check:
+    function: sql_expression
+    arguments:
+      expression: game_date <= current_date()
+      msg: game_date is in the future
+
+# 7. at_bat_id must be unique across the dataset
+- criticality: error
+  check:
+    function: is_unique
+    arguments:
+      columns:
+        - at_bat_id

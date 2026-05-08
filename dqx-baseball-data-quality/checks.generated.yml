@@ -1,0 +1,91 @@
+- check:
+    function: is_not_null_and_not_empty
+    arguments:
+      column: at_bat_id
+      trim_strings: true
+  name: at_bat_id_is_null_or_empty
+  criticality: warn
+- check:
+    function: is_not_null_and_not_empty
+    arguments:
+      column: game_id
+      trim_strings: true
+  name: game_id_is_null_or_empty
+  criticality: warn
+- check:
+    function: is_not_null
+    arguments:
+      column: game_date
+  name: game_date_is_null
+  criticality: warn
+- check:
+    function: is_in_range
+    arguments:
+      column: game_date
+      min_limit: '2026-03-28'
+      max_limit: '2026-07-02'
+  name: game_date_isnt_in_range
+  criticality: warn
+- check:
+    function: is_not_null
+    arguments:
+      column: inning
+  name: inning_is_null
+  criticality: warn
+- check:
+    function: is_in_range
+    arguments:
+      column: inning
+      min_limit: 1
+      max_limit: 27
+  name: inning_isnt_in_range
+  criticality: warn
+- check:
+    function: is_not_empty
+    arguments:
+      column: pitcher_id
+      trim_strings: true
+  name: pitcher_id_is_not_empty
+  criticality: warn
+- check:
+    function: is_not_empty
+    arguments:
+      column: batter_id
+      trim_strings: true
+  name: batter_id_is_not_empty
+  criticality: warn
+- check:
+    function: is_not_null_and_not_empty
+    arguments:
+      column: pitch_type
+      trim_strings: true
+  name: pitch_type_is_null_or_empty
+  criticality: warn
+- check:
+    function: is_not_null
+    arguments:
+      column: pitch_speed_mph
+  name: pitch_speed_mph_is_null
+  criticality: warn
+- check:
+    function: is_in_range
+    arguments:
+      column: pitch_speed_mph
+      min_limit: 16.807706374286326
+      max_limit: 138.7
+  name: pitch_speed_mph_isnt_in_range
+  criticality: warn
+- check:
+    function: is_not_null
+    arguments:
+      column: batting_avg
+  name: batting_avg_is_null
+  criticality: warn
+- check:
+    function: is_in_range
+    arguments:
+      column: batting_avg
+      min_limit: -0.31357007781273316
+      max_limit: 0.8861040778127341
+  name: batting_avg_isnt_in_range
+  criticality: warn

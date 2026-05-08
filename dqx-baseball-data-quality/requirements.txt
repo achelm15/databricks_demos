@@ -1,0 +1,6 @@
+databricks-connect>=18.0.0,<18.1.0
+databricks-sdk>=0.30.0
+databricks-labs-dqx>=0.14.0
+python-dotenv>=1.0.0
+faker>=24.0.0
+pyyaml>=6.0
