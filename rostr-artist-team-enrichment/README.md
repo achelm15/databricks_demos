@@ -22,12 +22,15 @@ wants an audit trail.
 
 | File | Purpose |
 |---|---|
-| `00_verify_connection.ipynb` | Confirms rostr.cc login + Google Sheet read before you start the demo |
-| `01_enrich_artists.ipynb`    | The actual job: read sheet → look up rostr.cc → write back missing cells |
+| `databricks_ui_single_notebook_demo.ipynb` | **Start here for a walkthrough.** Self-contained — runs in the Databricks UI with all code inline and credentials hardcoded at the top. No `.env`, no Databricks Connect, no module imports. |
+| `00_verify_connection.ipynb` | Confirms rostr.cc login + Google Sheet read before you start the demo (local-dev flow with `.env`) |
+| `01_enrich_artists.ipynb`    | The job split across notebook + module files (local-dev flow with `.env`) |
 | `rostr_client.py`            | Thin client around rostr.cc's JSON API (`/v1/auth/rostr` + `/v1/artist/{handle}/team/{ROLE}`) |
 | `sheets_client.py`           | Google Sheets v4 read/update with both `adc` (laptop) and `service` (job) auth modes |
 | `create_job.py`              | One-shot helper to create the nightly Databricks Job from `databricks-sdk` |
 | `requirements.txt`, `.env.example` | Standard demo scaffolding |
+
+> **TL;DR for the walkthrough:** import `databricks_ui_single_notebook_demo.ipynb` into a Databricks workspace, paste in the rostr.cc creds + sheet ID + service-account JSON at the top, and run the cells top-to-bottom. Everything else in this folder is the original split-across-files version.
 
 ---
 
