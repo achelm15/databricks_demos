@@ -69,6 +69,35 @@ Run **`00_setup` → `01` → `02` → `03`** once to stand up the demo. Then fo
 
 NHL EDGE-style play-by-play APIs return JSON with a stable core (game id, period, event type, coords) plus an ever-growing tail of advanced-stats fields. **VARIANT** lets bronze land the raw payload without committing to a schema, while still being queryable with `payload:expected_goals::double` style dot-paths. That's what makes the "new key appears" case detectable in SQL without re-parsing JSON.
 
+## Why allow-list-gated silver instead of auto schema evolution?
+
+Databricks supports several flavors of automatic schema evolution. Any of them would let a new API key turn into a silver column with no human in the loop:
+
+| Mechanism | Behavior |
+|---|---|
+| `df.write.option('mergeSchema', 'true')` | New columns in the DataFrame are appended to the target Delta table on write |
+| `spark.databricks.delta.schema.autoMerge.enabled = true` | Same, but session-wide — every write absorbs new columns |
+| Auto Loader `cloudFiles.schemaEvolutionMode = addNewColumns` | Streaming ingest restarts on new columns and includes them on the next run |
+| DLT / Lakeflow Declarative Pipelines | Built-in schema evolution with expectations |
+| `MERGE INTO ... WITH SCHEMA EVOLUTION` | Upserts can introduce new target columns |
+
+This demo deliberately picks a different posture: **bronze auto-absorbs, silver is governed**.
+
+- **Bronze**: VARIANT is the most permissive form of auto-evolution — *every* new key is captured in `payload`, regardless of type or nesting, with zero data loss and full history. Nothing to configure, nothing to break.
+- **Silver**: the `known_payload_keys` allow-list is the explicit contract. A new key in the API doesn't become a silver column until someone updates the list (notebook 05 step 1).
+- **The alert is the bridge**: drift surfaces immediately via the DBSQL Alert, so "I didn't notice" never happens — but the response is a deliberate human decision, not an auto-merge.
+
+The tradeoff:
+
+| | Auto-evolve silver | Allow-list-gated silver (this demo) |
+|---|---|---|
+| New API key shows up in silver | Automatic, same day | Only after the allow-list is updated |
+| Risk of silent contract changes downstream | Real — a dashboard suddenly has a new column | None — gold/dashboards only see what was reviewed |
+| Lag between API change and silver coverage | None | One PR / notebook run (minutes to hours) |
+| Best when… | Schema is owned end-to-end by one team, downstream is forgiving | Schema crosses team boundaries, downstream consumers expect stability |
+
+If your customer prefers fully automatic, the change is small: swap the explicit `selectExpr(...)` in notebook 05 step 2 for a `payload:*` projection (or Auto Loader with `addNewColumns`), drop the allow-list, and keep the LHM monitor + Job alert as your safety net.
+
 ## Files
 
 ```
