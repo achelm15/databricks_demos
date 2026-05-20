@@ -1,0 +1,47 @@
+{
+  "evaluation": {
+    "source": {
+      "name": "sightings",
+      "display": "source",
+      "aggregation": "COUNT"
+    },
+    "comparison_operator": "GREATER_THAN",
+    "threshold": {
+      "value": {
+        "double_value": 0.0
+      }
+    },
+    "notification": {}
+  },
+  "schedule": {
+    "quartz_cron_schedule": "15 0 11 ? * Wed",
+    "timezone_id": "America/New_York"
+  },
+  "query_lines": [
+    "-- DBSQL Alert: schema drift — unknown keys in bronze.plays_raw.payload (VARIANT)",
+    "--",
+    "-- How to use this:",
+    "--   1. Sidebar → Alerts → Create Alert",
+    "--   2. Paste this query into the alert's built-in query editor, then click Run",
+    "--   3. Set the condition:",
+    "--      - Column: sightings",
+    "--      - Aggregation: Sum (or Count)",
+    "--      - Operator: > 0",
+    "--   4. Set the schedule: every 5 minutes (or whatever cadence matches your ingest)",
+    "--   5. Set notifications: search for your username or add a Slack/email destination",
+    "--   6. Click \"View alert\" to save",
+    "--",
+    "-- Note: new-style alerts don't support query parameters.",
+    "-- Either fully-qualify the view or set catalog/schema context in your warehouse.",
+    "",
+    "SELECT",
+    "    payload_key,",
+    "    sightings,",
+    "    first_seen,",
+    "    last_seen,",
+    "    source_versions",
+    "FROM alexander_booth.hockey_schema_monitoring_silver.v_unknown_payload_keys",
+    "WHERE last_seen >= current_timestamp() - INTERVAL 1 HOUR",
+    "ORDER BY last_seen DESC;"
+  ]
+}

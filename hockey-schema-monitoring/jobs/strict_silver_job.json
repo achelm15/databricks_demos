@@ -1,0 +1,56 @@
+{
+  "_comment": "Example Job that runs the strict silver projection (notebook 02) on a schedule. If bronze contains a v2 payload key that the projection doesn't account for, the job *still succeeds* — VARIANT projection is lenient. To make the job FAIL on drift (and thus trigger email_notifications.on_failure), add the 'strict' guard task below: it queries the drift view and FAILs the run if any unknown keys exist. Wire it up via: Jobs UI → Create Job → paste this JSON into the YAML/JSON editor, OR use 'databricks jobs create --json @jobs/strict_silver_job.json'.",
+  "name": "hockey-strict-silver",
+  "tasks": [
+    {
+      "task_key": "drift_guard",
+      "description": "Fails the run if bronze contains payload keys not in the allow-list — turns schema drift into a Job failure that fires email_notifications.on_failure.",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Users/<your-email>/hockey-schema-monitoring/03_drift_detector_and_monitoring",
+        "source": "WORKSPACE"
+      },
+      "environment_key": "default"
+    },
+    {
+      "task_key": "silver_projection",
+      "depends_on": [{"task_key": "drift_guard"}],
+      "notebook_task": {
+        "notebook_path": "/Workspace/Users/<your-email>/hockey-schema-monitoring/02_silver_projection",
+        "source": "WORKSPACE"
+      },
+      "environment_key": "default"
+    }
+  ],
+  "environments": [
+    {
+      "environment_key": "default",
+      "spec": {
+        "client": "2"
+      }
+    }
+  ],
+  "email_notifications": {
+    "on_failure":   ["alexander.booth@databricks.com"],
+    "on_duration_warning_threshold_exceeded": ["alexander.booth@databricks.com"],
+    "no_alert_for_skipped_runs": false
+  },
+  "webhook_notifications": {
+    "_comment": "Optional: add Slack/PagerDuty/MS Teams via Account-level webhook destinations, then reference their IDs here.",
+    "on_failure": []
+  },
+  "health": {
+    "rules": [
+      {
+        "metric": "RUN_DURATION_SECONDS",
+        "op": "GREATER_THAN",
+        "value": 600
+      }
+    ]
+  },
+  "schedule": {
+    "quartz_cron_expression": "0 0 * * * ?",
+    "timezone_id": "America/New_York",
+    "pause_status": "UNPAUSED"
+  },
+  "max_concurrent_runs": 1
+}
