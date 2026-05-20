@@ -1,0 +1,19 @@
+command:
+  - "uvicorn"
+  - "backend.main:app"
+  - "--host"
+  - "0.0.0.0"
+  - "--port"
+  - "8000"
+
+env:
+  - name: "CATALOG"
+    value: "alexander_booth"
+  - name: "SCHEMA"
+    value: "maas_summit_team8"
+  - name: "LAKEBASE_INSTANCE"
+    value: "maas-team8"
+  - name: "LAKEBASE_DATABASE"
+    value: "acme_agency"
+  - name: "STATIC_DIR"
+    value: "frontend"
