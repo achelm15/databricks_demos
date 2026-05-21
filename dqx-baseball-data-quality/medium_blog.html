@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stop Writing Custom Data Quality Frameworks: A Tour of Databricks Labs DQX</title>
+<meta name="description" content="Profiles, YAML rules, Python rules, and row-level quarantine — without writing your own runner.">
+<meta name="author" content="Alexander Booth">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Stop Writing Custom Data Quality Frameworks: A Tour of Databricks Labs DQX">
+<meta property="og:description" content="Profiles, YAML rules, Python rules, and row-level quarantine — without writing your own runner.">
+<meta property="og:url" content="https://aboothinthewild.github.io/dqx_blog.html">
+<meta property="article:published_time" content="2026-05-21T00:00:00Z">
+<meta property="article:author" content="Alexander Booth">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Stop Writing Custom Data Quality Frameworks: A Tour of Databricks Labs DQX",
+  "description": "Profiles, YAML rules, Python rules, and row-level quarantine — without writing your own runner.",
+  "author": {"@type": "Person", "name": "Alexander Booth"},
+  "datePublished": "2026-05-21"
+}
+</script>
+</head>
+<body>
+
+<article>
+<header>
+<h1>Stop Writing Custom Data Quality Frameworks: A Tour of Databricks Labs DQX</h1>
+<p><em>Profiles, YAML rules, Python rules, and row-level quarantine &mdash; without writing your own runner.</em></p>
+<p>By <a href="https://medium.com/@aboothinthewild" rel="author">Alexander Booth</a></p>
+</header>
+
+<hr>
+
+<p>Every data engineer has written a <code>run_check()</code> helper.</p>
+
+<p>Take a SQL predicate, count the failing rows, insert a row into a results table, and print a pass/fail icon. Maybe loop over a list of rule dicts. Maybe add a severity column. Maybe even a notes field, escaped exactly once because you got burned by a single quote.</p>
+
+<p>I have one for a prior project, <code>06_reliability_dq.ipynb</code> (linked <a href="https://github.com/ABoothInTheWild/databricks_demos/blob/main/mlb-gumbo-waf/06_reliability_dq.ipynb">here</a>). It works. It graphs. It alerts. It also does nothing that the <a href="https://github.com/databrickslabs/dqx">Databricks Labs DQX</a> library doesn&rsquo;t do better.</p>
+
+<p>This post is the case for throwing yours away.</p>
+
+<h2>The Dataset</h2>
+
+<p>A synthetic season of pitch-level baseball data, ~50,000 rows, generated locally with Faker and landed in Unity Catalog as <code>dqx_baseball_bronze.pitches_raw</code>.</p>
+
+<p>Roughly 12% of rows have planted quality issues:</p>
+
+<ul>
+<li>Null <code>pitcher_id</code> or <code>batter_id</code></li>
+<li>Pitch speeds that are negative or greater than 130 mph</li>
+<li>Innings beyond the 20th</li>
+<li>Batting averages outside [0, 1]</li>
+<li>Bogus pitch type codes like <code>XX</code> or <code>??</code></li>
+<li>Game dates in the future</li>
+<li>Duplicate <code>at_bat_id</code>s</li>
+</ul>
+
+<p>Every issue maps to at least one rule we&rsquo;ll write, so the rule-level breakdown at the end is interpretable.</p>
+
+<p>A quick smoke check on bronze confirms the planted mess:</p>
+
+<pre><code>+-----+------------+---------+----------+-------+--------+-----------+
+|total|null_pitcher|bad_speed|bad_inning|bad_avg|bad_type|future_date|
++-----+------------+---------+----------+-------+--------+-----------+
+|50000|641         |1295     |693       |1342   |671     |663        |
++-----+------------+---------+----------+-------+--------+-----------+
+</code></pre>
+
+<p>That&rsquo;s the input. Now to the question of what to run against it.</p>
+
+<h2>What &ldquo;Good Enough&rdquo; Looks Like &mdash; and Why It Isn&rsquo;t</h2>
+
+<p>Here is the helper from the hand-rolled notebook, in full:</p>
+
+<pre><code>def run_check(layer, table_name, rule_name, predicate_fail, severity="warn", notes=""):
+    """predicate_fail = SQL predicate that matches FAILING rows."""
+    failing = spark.sql(f"SELECT COUNT(*) c FROM {table_name} WHERE {predicate_fail}").collect()[0]["c"]
+    total   = spark.sql(f"SELECT COUNT(*) c FROM {table_name}").collect()[0]["c"]
+    passed  = failing == 0
+    spark.sql(f"""
+        INSERT INTO {dq_table} VALUES (
+            '{RUN_ID}', TIMESTAMP'{RUN_TIME}', '{layer}', '{table_name}',
+            '{rule_name}', '{severity}', {failing}, {total}, {str(passed).lower()},
+            '{notes.replace("'", "''")}'
+        )
+    """)
+    icon = "PASS" if passed else ("FAIL" if severity == "error" else "WARN")
+    print(f"  [{icon}] {rule_name}: {failing}/{total} failing")
+    return passed
+</code></pre>
+
+<p>It is fine. It is also a series of shortcuts.</p>
+
+<p>The <code>notes.replace("'", "''")</code> line is a SQL injection patch that proves the point&hellip; we are interpolating strings into SQL because we never wired up parameterized queries. The semantics are inverted (the predicate matches <em>failing</em> rows, not passing ones), which is easy to get wrong at 5 pm on a Friday. Uniqueness has to be re-implemented from scratch:</p>
+
+<pre><code>run_check("silver", f"{S}.game_data g", "silver_game_sk_unique",
+          f"game_sk IN (SELECT game_sk FROM {S}.game_data GROUP BY game_sk HAVING COUNT(*) > 1)",
+          severity="error", notes="PK uniqueness")
+</code></pre>
+
+<p>The <code>dq_results</code> table was designed by hand. The severity column is a free-form string. There is no rule linter, so a typo goes unnoticed and the rule passes.</p>
+
+<p>And the deepest problem: this approach only ever counts failures. It never tells you <em>which rows</em> failed. There is no quarantine. If a downstream consumer wants the bad rows isolated for review &mdash; and they always do &mdash; you build that subsystem yourself.</p>
+
+<p>DQX is the subsystem.</p>
+
+<h2>What DQX Actually Is</h2>
+
+<p>DQX is a pure-Python library from Databricks Labs. The engine accepts checks as either YAML metadata or Python objects, builds Spark plans that execute server-side, and returns DataFrames annotated with <code>_errors</code> and <code>_warnings</code> columns.</p>
+
+<p>It has three primitives:</p>
+
+<ul>
+<li><strong><code>DQProfiler</code></strong> &mdash; scans a DataFrame, returns summary statistics plus per-column profiles (nulls, ranges, distinct values).</li>
+<li><strong><code>DQGenerator</code></strong> &mdash; turns those profiles into candidate rules.</li>
+<li><strong><code>DQEngine</code></strong> &mdash; validates, applies, and splits.</li>
+</ul>
+
+<p>Because it builds Spark plans rather than executing locally, DQX works fine through Databricks Connect. Everything in this post runs serverless from a local Jupyter notebook.</p>
+
+<p>A note on install. If your network blocks PyPI (some corporate setups have <code>127.0.0.1 pypi.org</code> in <code>/etc/hosts</code>), pull the wheels straight from GitHub releases:</p>
+
+<pre><code>gh release download v0.14.0 -R databrickslabs/dqx       --pattern "*.whl" -D /tmp --clobber
+gh release download v0.12.0 -R databrickslabs/blueprint --pattern "*.whl" -D /tmp --clobber
+
+pip install --no-deps /tmp/databricks_labs_dqx-0.14.0-py3-none-any.whl \
+                      /tmp/databricks_labs_blueprint-0.12.0-py3-none-any.whl
+</code></pre>
+
+<p>The <code>databricks-sdk~=0.73</code> pin in DQX&rsquo;s wheel metadata is tighter than the actual requirement &mdash; DQX only needs <code>WorkspaceClient</code>, which works fine on older SDK versions. <code>--no-deps</code> sidesteps the pin.</p>
+
+<h2>Profile &rarr; Rules in Five Lines</h2>
+
+<p>This is the most &ldquo;magic&rdquo; part of DQX and the part least covered online.</p>
+
+<p>Point <code>DQProfiler</code> at the bronze table, hand the result to <code>DQGenerator</code>, and you get a candidate ruleset:</p>
+
+<pre><code>from databricks.sdk import WorkspaceClient
+from databricks.labs.dqx.profiler.profiler import DQProfiler
+from databricks.labs.dqx.profiler.generator import DQGenerator
+
+ws = WorkspaceClient()
+df = spark.read.table(BRONZE)
+
+profiler   = DQProfiler(ws)
+summary, profiles = profiler.profile(df)
+
+generator   = DQGenerator(ws)
+auto_checks = generator.generate_dq_rules(profiles, criticality="warn")
+</code></pre>
+
+<p>For the pitch table that produces 13 candidate rules &mdash; one or two per column, covering not-null and range/in-list constraints. A sample of the output:</p>
+
+<pre><code>- check:
+    function: is_not_null_and_not_empty
+    arguments:
+      column: at_bat_id
+      trim_strings: true
+  name: at_bat_id_is_null_or_empty
+  criticality: warn
+
+- check:
+    function: is_in_range
+    arguments:
+      column: game_date
+      min_limit: '2026-03-28'
+      max_limit: '2026-07-02'
+  name: game_date_not_in_range
+  criticality: warn
+</code></pre>
+
+<p>There are two important things to notice.</p>
+
+<p>First, the <code>pitch_speed_mph</code> range candidate pulls its bounds from the polluted data. The profiler sees the &minus;72 mph rows and the 140 mph rows and dutifully proposes a range that contains them. The DQX docs are explicit about this: auto-generated rules are <em>candidates</em>, not production rules. A hand-curated <code>checks.yml</code> uses 40&ndash;110.</p>
+
+<p>Second, profiling is a one-time discovery step. You do not schedule it. You run it, review the output, tighten the thresholds, and commit a final YAML.</p>
+
+<h2>YAML and Python &mdash; Same Engine, Two Styles</h2>
+
+<p>The hand-curated <code>checks.yml</code> for this dataset is seven rules:</p>
+
+<pre><code>- criticality: error
+  check:
+    function: is_not_null_and_not_empty
+    for_each_column:
+      - at_bat_id
+      - game_id
+      - pitcher_id
+      - batter_id
+
+- name: pitch_speed_in_range
+  criticality: error
+  check:
+    function: is_in_range
+    arguments:
+      column: pitch_speed_mph
+      min_limit: 40
+      max_limit: 110
+
+- name: pitch_type_in_enum
+  criticality: warn
+  check:
+    function: is_in_list
+    arguments:
+      column: pitch_type
+      allowed: [FF, SI, SL, CU, CH, FC, KC, FS]
+
+- criticality: error
+  check:
+    function: sql_expression
+    arguments:
+      expression: game_date &lt;= current_date()
+      msg: game_date is in the future
+
+- criticality: error
+  check:
+    function: is_unique
+    arguments:
+      columns: [at_bat_id]
+</code></pre>
+
+<p>YAML covers the 80% case. For things YAML can&rsquo;t express cleanly &mdash; dynamic rules built from another system, or rules that need runtime config &mdash; you reach for Python:</p>
+
+<pre><code>from databricks.labs.dqx.rule import DQRowRule, Criticality
+from databricks.labs.dqx import check_funcs
+
+py_checks = [
+    DQRowRule(
+        name="pitcher_id_format",
+        column="pitcher_id",
+        check_func=check_funcs.regex_match,
+        check_func_kwargs={"regex": r"^P\d{4}$"},
+        criticality=Criticality.WARN.value,
+    ),
+    DQRowRule(
+        name="speed_above_min",
+        column="pitch_speed_mph",
+        check_func=check_funcs.sql_expression,
+        check_func_kwargs={
+            "expression": "pitch_speed_mph IS NOT NULL AND pitch_speed_mph &gt; 0",
+            "msg": "pitch_speed_mph must be positive",
+        },
+        criticality=Criticality.ERROR.value,
+    ),
+]
+</code></pre>
+
+<p>The two styles use the same engine. Same <code>_errors</code> and <code>_warnings</code> semantics. You can mix them in a single pipeline.</p>
+
+<p>Before running anything, DQX lints the YAML:</p>
+
+<pre><code>yaml_status = DQEngine.validate_checks(yaml_checks)
+print(f"YAML checks  ({len(yaml_checks)} rules): {yaml_status}")
+# YAML checks  (7 rules): No errors found
+</code></pre>
+
+<p>Typo a function name &mdash; <code>is_in_rage</code> instead of <code>is_in_range</code> &mdash; and the lint fails loudly before a single Spark task runs. The hand-rolled notebook has no equivalent step. A typo there silently produces a passing rule.</p>
+
+<h2>Apply, Split, Quarantine</h2>
+
+<p>This is where the comparison gets brutal.</p>
+
+<pre><code>from databricks.labs.dqx.engine import DQEngine
+
+dq_engine = DQEngine(ws)
+df = spark.read.table(BRONZE)
+
+# Pass 1: YAML rules
+valid_yaml_df, invalid_yaml_df = dq_engine.apply_checks_by_metadata_and_split(df, yaml_checks)
+
+# Pass 2: Python rules on the survivors
+valid_clean = valid_yaml_df.drop("_errors", "_warnings")
+valid_df, invalid_py_df = dq_engine.apply_checks_and_split(valid_clean, py_checks)
+
+# Final invalid set
+invalid_df = invalid_yaml_df.unionByName(invalid_py_df, allowMissingColumns=True)
+</code></pre>
+
+<p>The result:</p>
+
+<pre><code>Input rows: 50,000
+Valid:      45,291
+Invalid:    6,070   (11.8%)
+</code></pre>
+
+<p><code>invalid_df</code> does not just have a count. It has the original row plus an <code>_errors</code> array (rules with criticality <code>error</code>) and a <code>_warnings</code> array (rules with criticality <code>warn</code>). Each array element is a struct containing the rule name, the failure message, the columns involved, and the function that fired.</p>
+
+<p>Land the valid rows in silver, the invalid rows in quarantine, and you have row-level audit trails for free:</p>
+
+<pre><code>valid_df.drop("_errors", "_warnings") \
+    .write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(SILVER)
+
+invalid_df.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(QUARANTINE)
+</code></pre>
+
+<p>(<code>INSERT OVERWRITE</code> rather than <code>MERGE</code> because Databricks Connect doesn&rsquo;t support <code>MERGE</code>. Not a DQX limitation.)</p>
+
+<p>The hand-rolled notebook has nothing comparable. It counts; DQX tags, splits, and lands.</p>
+
+<h2>A Sanity Check from Quarantine</h2>
+
+<p>One query against the quarantine table gives the rule-level breakdown:</p>
+
+<pre><code>WITH unnested AS (
+    SELECT explode(_errors) AS e FROM dqx_baseball_quarantine.pitches_quarantine
+    UNION ALL
+    SELECT explode(_warnings) FROM dqx_baseball_quarantine.pitches_quarantine
+)
+SELECT e.name AS rule, COUNT(*) AS failures
+FROM unnested
+GROUP BY e.name
+ORDER BY failures DESC
+</code></pre>
+
+<pre><code>+---------------------------+--------+
+|rule                       |failures|
++---------------------------+--------+
+|batting_avg_not_in_range   |1342    |
+|pitch_speed_in_range       |1295    |
+|inning_not_in_range        |693     |
+|batter_id_is_null_or_empty |677     |
+|pitch_type_in_enum         |671     |
+|not_game_date_current_date |663     |
+|pitcher_id_is_null_or_empty|641     |
+|at_bat_id_is_not_unique    |100     |
++---------------------------+--------+
+</code></pre>
+
+<p>Lines up almost perfectly with what we planted in bronze. The differences (677 vs 641 for batter ID nulls, 100 for <code>at_bat_id</code> duplicates) are random sampling on the mutator side, not DQX missing anything.</p>
+
+<h2>The Longitudinal Table</h2>
+
+<p>Roll the quarantine breakdown into a long-format Delta table, keyed by <code>(run_id, run_time, rule_name)</code>:</p>
+
+<pre><code>INSERT INTO dq_results
+WITH bronze_total AS (SELECT COUNT(*) AS total FROM bronze_table),
+failures AS (
+    SELECT e.name AS rule_name, 'error' AS severity
+    FROM quarantine LATERAL VIEW explode(_errors) AS e
+    UNION ALL
+    SELECT w.name, 'warn'
+    FROM quarantine LATERAL VIEW explode(_warnings) AS w
+),
+rolled AS (
+    SELECT rule_name, severity, COUNT(*) AS failing_rows
+    FROM failures
+    GROUP BY rule_name, severity
+)
+SELECT '&lt;run_id&gt;' AS run_id,
+       TIMESTAMP'&lt;run_time&gt;' AS run_time,
+       'bronze_table' AS table_name,
+       r.rule_name, r.severity, r.failing_rows,
+       bt.total AS total_rows,
+       1.0 - (r.failing_rows / bt.total) AS pass_rate
+FROM rolled r CROSS JOIN bronze_total bt
+</code></pre>
+
+<p>This is the exact shape the hand-rolled <code>dq_results</code> table already has. That matters. If you are already alerting and dashboarding off your home-grown table, DQX changes how you <em>populate</em> it, not what&rsquo;s downstream. The upgrade is local.</p>
+
+<p>Run the pipeline on a schedule, and after ten executions you can plot pass-rate-by-rule against time. The orange line is <code>pitch_speed_in_range</code> regressing through the SLA threshold. That is the kind of signal you get for free once row-level data quality is structured and longitudinal &mdash; and the kind of signal that is hard to surface when your DQ pipeline is a stack of <code>run_check()</code> calls.</p>
+
+<h2>Where DQX Still Has Rough Edges</h2>
+
+<p>A short list, since I&rsquo;ve been honest about everything else.</p>
+
+<ul>
+<li><strong>DBR floor.</strong> DQX supports DBR 14.3 LTS and up. Older runtimes need not apply.</li>
+<li><strong>The wheel-metadata pin.</strong> As mentioned, <code>databricks-sdk~=0.73</code> is tighter than the actual requirement. <code>pip install --no-deps</code> works around it.</li>
+<li><strong>Profiler sample defaults.</strong> <code>DQProfiler.profile()</code> samples 30% of rows up to a 1,000-row cap by default. Fine for discovery, not enough for production. Tune via <code>opts={...}</code>.</li>
+<li><strong>No <code>MERGE</code> through Databricks Connect.</strong> Use <code>INSERT OVERWRITE</code> or <code>saveAsTable(mode="overwrite")</code> instead. Not DQX&rsquo;s fault, but worth flagging.</li>
+<li><strong>Two-pass for mixed checks.</strong> Running YAML rules and Python rules in sequence requires dropping the result columns between passes (<code>apply_checks_*</code> rejects DataFrames that already have <code>_errors</code>/<code>_warnings</code>). Easy once you know &mdash; the kind of thing that costs you half an hour the first time.</li>
+</ul>
+
+<hr>
+
+<h2>Bottom Line</h2>
+
+<p>The case isn&rsquo;t that DQX is magic. It&rsquo;s that DQX is the framework you&rsquo;d write yourself &mdash; written better, maintained by people who think about data quality for a living, and shipped with the parts you usually skip because they&rsquo;re tedious.</p>
+
+<p>Three concrete wins over the hand-rolled approach:</p>
+
+<ul>
+<li><strong>Row-level quarantine</strong> &mdash; the part you almost never build yourself, and the part downstream consumers always want.</li>
+<li><strong>A rule linter</strong> &mdash; <code>validate_checks</code> catches the typo before Spark does.</li>
+<li><strong>A profiler</strong> &mdash; five lines to a starting ruleset, with the candidates ready for review.</li>
+</ul>
+
+<p>If you have a <code>run_check()</code> helper sitting in your repo, the upgrade path is short. Same <code>dq_results</code> shape downstream. Same dashboards. Throw out the helper, keep the table.</p>
+
+<p>Both notebooks live in the repo if you want to diff them yourself:</p>
+
+<ul>
+<li>DQX demo: <a href="https://github.com/ABoothInTheWild/databricks_demos/tree/main/dqx-baseball-data-quality">dqx-baseball-data-quality</a></li>
+<li>Hand-rolled comparison: <a href="https://github.com/ABoothInTheWild/databricks_demos/blob/main/mlb-gumbo-waf/06_reliability_dq.ipynb">mlb-gumbo-waf/06_reliability_dq.ipynb</a></li>
+</ul>
+
+<p>For more on DQX itself, see the <a href="https://github.com/databrickslabs/dqx">Databricks Labs DQX repo</a> and its <a href="https://databrickslabs.github.io/dqx/">documentation</a>.</p>
+
+<p><em>Note: The baseball pitch data used throughout this article is entirely synthetic and was generated locally for demonstration purposes.</em></p>
+
+</article>
+</body>
+</html>
