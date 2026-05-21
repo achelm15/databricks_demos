@@ -24,6 +24,8 @@ router = APIRouter(prefix="/api", tags=["cost"])
 # Approximate $/hr per capacity tier (CU_1=$0.50/hr, CU_2=$1.00/hr, CU_4=$2.00/hr)
 HOURLY_USD: Dict[str, float] = {"CU_1": 0.50, "CU_2": 1.00, "CU_4": 2.00, "CU_8": 4.00}
 HOURS_IN_MONTH = 24 * 30
+# Per autoscale-CU pricing for the live-branch cost panel.
+USD_PER_CU_HOUR = 0.25
 
 # Per-tier behavior model
 TIER_BEHAVIOR = {
@@ -78,7 +80,9 @@ async def cost_summary(request: Request):
             "saved_usd": round(saved, 2),
         })
 
-    branch_count, branch_cost = await _live_branch_cost(settings.lakebase_instance, rate)
+    branch_count, branch_cost = await _live_branch_cost(
+        settings.lakebase_project, settings.lakebase_branch
+    )
 
     return {
         "currency": "USD",
@@ -95,20 +99,41 @@ async def cost_summary(request: Request):
     }
 
 
-async def _live_branch_cost(parent_instance: str, base_rate: float) -> tuple[int, float]:
-    """Sum the hourly cost of all *running* branches off the parent instance."""
+async def _live_branch_cost(project: str, production_branch: str) -> tuple[int, float]:
+    """Sum the hourly cost of all *running* non-production autoscale branches.
+
+    Cost is computed from each branch's primary endpoint min-CU, since that's
+    what scale-to-zero settles at when idle traffic comes in.
+    """
     w = WorkspaceClient()
     try:
-        resp = w.api_client.do("GET", "/api/2.0/database/instances")
+        branches_resp = w.api_client.do(
+            "GET", f"/api/2.0/postgres/projects/{project}/branches"
+        )
     except Exception:
         return (0, 0.0)
+
     count, total = 0, 0.0
-    for inst in resp.get("database_instances", []):
-        parent = inst.get("parent_instance_ref")
-        if not parent or parent.get("name") != parent_instance:
+    for br in branches_resp.get("branches", []):
+        status = br.get("status") or {}
+        branch_id = status.get("branch_id") or br.get("name", "").split("/")[-1]
+        if status.get("default") or branch_id == production_branch:
             continue
-        if inst.get("state") not in ("AVAILABLE", "STARTING"):
+        if status.get("current_state") != "READY":
             continue
+        # Fetch endpoint sizing for cost
+        try:
+            ep_resp = w.api_client.do(
+                "GET",
+                f"/api/2.0/postgres/projects/{project}/branches/{branch_id}/endpoints",
+            )
+        except Exception:
+            continue
+        for ep in ep_resp.get("endpoints", []):
+            ep_status = ep.get("status") or {}
+            if ep_status.get("current_state") != "ACTIVE":
+                continue
+            min_cu = float(ep_status.get("autoscaling_limit_min_cu") or 0.5)
+            total += min_cu * USD_PER_CU_HOUR
         count += 1
-        total += HOURLY_USD.get(inst.get("capacity", "CU_1"), base_rate)
     return (count, total)

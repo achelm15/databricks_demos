@@ -88,7 +88,9 @@ def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(title="MAAS Summit Team 8 — Multi-Tenant Self-Serve Reporting")
 
-    app.state.pool = LakebasePool(settings.lakebase_instance, settings.lakebase_database)
+    app.state.pool = LakebasePool(
+        settings.lakebase_project, settings.lakebase_branch, settings.lakebase_database
+    )
 
     app.add_middleware(
         CORSMiddleware,
@@ -112,7 +114,8 @@ def create_app() -> FastAPI:
         return {
             "status": "ok",
             "pool_available": pool.available,
-            "lakebase_instance": settings.lakebase_instance,
+            "lakebase_project": settings.lakebase_project,
+            "lakebase_branch": settings.lakebase_branch,
             "lakebase_database": settings.lakebase_database,
         }
 

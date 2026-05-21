@@ -21,10 +21,15 @@ log = logging.getLogger(__name__)
 
 
 class LakebasePool:
-    """Asyncpg pool that uses a rotating OAuth token as the Postgres password."""
+    """Asyncpg pool that uses a rotating OAuth token as the Postgres password.
 
-    def __init__(self, instance_name: str, database: str):
-        self.instance_name = instance_name
+    Resolves the connection host from the Lakebase Autoscaling project's
+    production branch primary endpoint.
+    """
+
+    def __init__(self, project: str, branch: str, database: str):
+        self.project = project
+        self.branch = branch
         self.database = database
         self._token: Optional[str] = None
         self._user_email: Optional[str] = None
@@ -49,8 +54,25 @@ class LakebasePool:
         if self._host:
             return self._host
         w = WorkspaceClient()
-        inst = w.api_client.do("GET", f"/api/2.0/database/instances/{self.instance_name}")
-        self._host = inst["read_write_dns"]
+        resp = w.api_client.do(
+            "GET",
+            f"/api/2.0/postgres/projects/{self.project}/branches/{self.branch}/endpoints",
+        )
+        endpoints = resp.get("endpoints") or []
+        if not endpoints:
+            raise RuntimeError(
+                f"no endpoints on projects/{self.project}/branches/{self.branch}"
+            )
+        # Pick the primary read-write endpoint
+        primary = next(
+            (e for e in endpoints
+             if (e.get("status") or {}).get("endpoint_type") == "ENDPOINT_TYPE_READ_WRITE"),
+            endpoints[0],
+        )
+        host = ((primary.get("status") or {}).get("hosts") or {}).get("host")
+        if not host:
+            raise RuntimeError(f"endpoint has no host: {primary.get('name')}")
+        self._host = host
         return self._host
 
     async def init(self) -> None:
