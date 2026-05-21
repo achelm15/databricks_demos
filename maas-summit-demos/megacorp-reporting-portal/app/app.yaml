@@ -1,0 +1,27 @@
+# Multi-Tenant Self-Serve Reporting Portal
+# Databricks App Configuration
+
+command:
+  - uvicorn
+  - backend.main:app
+  - --host
+  - 0.0.0.0
+  - --port
+  - "8000"
+
+env:
+  - name: LAKEBASE_PROJECT_ID
+    value: "adtech-portal"
+  - name: LAKEBASE_BRANCH
+    value: "production"
+  - name: LAKEBASE_DATABASE
+    value: "databricks_postgres"
+  - name: GENIE_SPACE_ID
+    value: "01f154786c3819f5b9d4dd3c13516e00"
+    description: "Genie space ID for NL queries (campaign_reach_qa)"
+  - name: SOURCE_CATALOG
+    value: "media_advertising"
+  - name: APP_CATALOG
+    value: "alexander_booth"
+  - name: APP_SCHEMA
+    value: "adtech_portal"

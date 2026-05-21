@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AdTech Reporting Portal</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/htm@3/dist/htm.umd.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8f9fa}
+    .nav{background:#1a1a2e;padding:.75rem 2rem;display:flex;align-items:center;justify-content:space-between;color:#fff}
+    .nav h1{font-size:1rem;font-weight:600}
+    .badge{background:rgba(255,255,255,.15);padding:2px 10px;border-radius:12px;font-size:.75rem;margin-left:1rem}
+    .tabs{background:#fff;border-bottom:1px solid #e0e0e0;padding:0 2rem;display:flex}
+    .tab{padding:1rem 1.5rem;border:none;background:transparent;cursor:pointer;font-size:.9rem;border-bottom:3px solid transparent;color:#666}
+    .tab.active{font-weight:600;color:#e63946;border-bottom-color:#e63946}
+    .content{padding:2rem;max-width:1400px;margin:0 auto}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem}
+    .card{background:#fff;border-radius:12px;padding:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+    .kpi-label{font-size:.75rem;color:#999;text-transform:uppercase;letter-spacing:.5px}
+    .kpi-value{font-size:1.5rem;font-weight:700;color:#1a1a2e;margin-top:.25rem}
+    .kpi-sub{font-size:.75rem;color:#999;margin-top:.25rem}
+    .btn{padding:.5rem 1rem;border-radius:6px;border:none;cursor:pointer;font-weight:500;transition:all .2s}
+    .btn-primary{background:#e63946;color:#fff}
+    .btn-outline{background:transparent;border:1px solid rgba(255,255,255,.3);color:#fff}
+    .btn-success{background:#2a9d8f;color:#fff}
+    .chart-card{background:#fff;border-radius:12px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,.05);margin-bottom:1.5rem}
+    .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem}
+    table{width:100%;border-collapse:collapse;font-size:.85rem}
+    th{text-align:left;padding:.5rem;border-bottom:2px solid #eee;font-weight:600;color:#555}
+    td{padding:.5rem;border-bottom:1px solid #f5f5f5}
+    .bar-chart{display:flex;flex-direction:column;gap:.6rem}
+    .bar-row{display:flex;align-items:center;gap:.75rem}
+    .bar-label{width:120px;font-size:.8rem;color:#555;text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .bar-track{flex:1;height:24px;background:#f0f0f0;border-radius:4px;overflow:hidden;position:relative}
+    .bar-fill{height:100%;border-radius:4px;transition:width .5s ease}
+    .bar-value{font-size:.75rem;color:#555;width:70px;text-align:right;flex-shrink:0}
+    .pie-chart{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+    .pie-segment{display:flex;align-items:center;gap:.5rem;padding:.4rem .8rem;background:#f8f9fa;border-radius:6px}
+    .pie-dot{width:12px;height:12px;border-radius:50%}
+    .login-container{min-height:100vh;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);display:flex;align-items:center;justify-content:center;padding:2rem}
+    .login-box{background:#fff;border-radius:16px;padding:3rem;width:100%;max-width:480px;box-shadow:0 25px 50px rgba(0,0,0,.3)}
+    .tenant-btn{padding:.75rem 1rem;border:2px solid #eee;border-radius:8px;background:#fff;cursor:pointer;text-align:left;display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:.5rem;transition:all .2s}
+    .tenant-btn.selected{border-color:#e63946;background:#fff5f5}
+    .tier-badge{font-size:.7rem;padding:2px 8px;border-radius:12px;color:#fff;font-weight:600;text-transform:uppercase}
+    .chat-container{max-width:800px;margin:0 auto}
+    .msg{margin-bottom:1rem;display:flex}
+    .msg-user{justify-content:flex-end}
+    .msg-bubble{max-width:80%;padding:.75rem 1rem;border-radius:12px;font-size:.9rem}
+    .msg-bubble-user{background:#e63946;color:#fff}
+    .msg-bubble-bot{background:#f5f5f5;color:#333}
+    .input-row{display:flex;gap:.5rem}
+    .input-row input{flex:1;padding:.75rem 1rem;border-radius:8px;border:2px solid #e0e0e0;font-size:.9rem;outline:none}
+    .suggestion{padding:.5rem .75rem;border-radius:20px;border:1px solid #e0e0e0;background:#fff;cursor:pointer;font-size:.8rem;color:#457b9d;transition:all .2s}
+    .suggestion:hover{background:#f0f8ff;border-color:#457b9d}
+    .sandbox-box{background:#fff;border-radius:12px;padding:2rem;box-shadow:0 2px 8px rgba(0,0,0,.05);text-align:center}
+    .arch-note{margin-top:1rem;padding:.75rem;background:#f0f8ff;border-radius:8px;font-size:.75rem;color:#457b9d}
+    .footer{text-align:center;padding:1rem;color:#999;font-size:.75rem;border-top:1px solid #eee;margin-top:2rem}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const {useState,useEffect}=React;
+const html=htm.bind(React.createElement);
+const COLORS=['#e63946','#457b9d','#2a9d8f','#e9c46a','#f4a261','#264653'];
+const TENANTS=[
+  {id:'big-mountain',name:'Big Mountain Media',tier:'enterprise'},
+  {id:'curious-globe',name:'Curious Globe Networks',tier:'premium'},
+  {id:'rainbow-hemisphere',name:'Rainbow Hemisphere Inc',tier:'premium'},
+  {id:'wily-one',name:'Wily One Digital',tier:'standard'},
+  {id:'large-mouse',name:'Large Mouse Entertainment',tier:'enterprise'},
+];
+
+let sessionId=localStorage.getItem('session_id');
+async function apiFetch(path,options={}){
+  const headers={'Content-Type':'application/json',...(options.headers||{})};
+  if(sessionId)headers['X-Session-Id']=sessionId;
+  const res=await fetch('/api'+path,{...options,headers});
+  if(res.status===401){localStorage.removeItem('session_id');sessionId=null;return null;}
+  if(!res.ok)throw new Error(await res.text());
+  return res.json();
+}
+
+function BarChartSimple({data,labelKey,valueKey,color}){
+  if(!data||!data.length)return null;
+  const max=Math.max(...data.map(d=>d[valueKey]||0));
+  return html`<div class="bar-chart">
+    ${data.map((d,i)=>html`<div key=${i} class="bar-row">
+      <div class="bar-label" title=${d[labelKey]}>${d[labelKey]}</div>
+      <div class="bar-track"><div class="bar-fill" style=${{width:((d[valueKey]||0)/max*100)+'%',background:color||COLORS[i%COLORS.length]}}></div></div>
+      <div class="bar-value">${(d[valueKey]||0).toLocaleString()}</div>
+    </div>`)}
+  </div>`;
+}
+
+function LoginPage({onLogin}){
+  const[tenant,setTenant]=useState('');
+  const[role,setRole]=useState('admin');
+  const[loading,setLoading]=useState(false);
+  const[error,setError]=useState('');
+  async function handleLogin(){
+    if(!tenant)return;
+    setLoading(true);setError('');
+    try{
+      const data=await apiFetch('/auth/login',{method:'POST',body:JSON.stringify({email:role+'@'+tenant+'.demo',tenant_id:tenant})});
+      if(data){sessionId=data.session_id;localStorage.setItem('session_id',data.session_id);onLogin(data);}
+      else setError('Login failed');
+    }catch(e){setError(e.message);}
+    setLoading(false);
+  }
+  return html`<div class="login-container"><div class="login-box">
+    <div style=${{textAlign:'center',marginBottom:'2rem'}}>
+      <div style=${{fontSize:'2.5rem'}}>📊</div>
+      <h1 style=${{fontSize:'1.5rem',color:'#1a1a2e',marginTop:'.5rem'}}>Campaign Reporting Portal</h1>
+      <p style=${{color:'#666',marginTop:'.5rem',fontSize:'.9rem'}}>Powered by Databricks Lakebase</p>
+    </div>
+    <label style=${{display:'block',fontWeight:600,marginBottom:'.5rem'}}>Select Your Organization</label>
+    ${TENANTS.map(t=>html`<button key=${t.id} class=${'tenant-btn'+(tenant===t.id?' selected':'')} onClick=${()=>setTenant(t.id)}>
+      <span style=${{fontWeight:500}}>${t.name}</span>
+      <span class="tier-badge" style=${{background:t.tier==='enterprise'?'#e63946':t.tier==='premium'?'#f4a261':'#ccc'}}>${t.tier}</span>
+    </button>`)}
+    <div style=${{display:'flex',gap:'.5rem',margin:'1.5rem 0'}}>
+      ${['admin','analyst'].map(r=>html`<button key=${r} class=${'tenant-btn'+(role===r?' selected':'')} style=${{flex:1,justifyContent:'center'}} onClick=${()=>setRole(r)}>${r==='admin'?'👑':'📈'} ${r}</button>`)}
+    </div>
+    ${error&&html`<p style=${{color:'#e63946',marginBottom:'1rem',fontSize:'.9rem'}}>${error}</p>`}
+    <button class="btn btn-primary" style=${{width:'100%',padding:'.9rem',fontSize:'1rem'}} onClick=${handleLogin} disabled=${!tenant||loading}>${loading?'Signing in...':'Sign In to Portal'}</button>
+    <p style=${{textAlign:'center',marginTop:'2rem',fontSize:'.75rem',color:'#999'}}>Scale-to-zero • Branching • Synced Tables • pgvector • UC RLS</p>
+  </div></div>`;
+}
+
+function MetricsView(){
+  const[data,setData]=useState(null);
+  const[devices,setDevices]=useState(null);
+  const[regions,setRegions]=useState(null);
+  const[error,setError]=useState('');
+  useEffect(()=>{
+    apiFetch('/metrics/overview').then(d=>{if(d)setData(d);}).catch(e=>setError(e.message));
+    apiFetch('/metrics/reach-by-device').then(d=>{if(d)setDevices(d.data);}).catch(()=>{});
+    apiFetch('/metrics/reach-by-region').then(d=>{if(d)setRegions(d.data);}).catch(()=>{});
+  },[]);
+  if(error)return html`<div class="chart-card"><p style=${{color:'#e63946'}}>Error loading metrics: ${error}</p><p style=${{color:'#666',marginTop:'.5rem',fontSize:'.85rem'}}>Make sure the Lakebase setup notebook has been run first.</p></div>`;
+  if(!data)return html`<div class="chart-card" style=${{textAlign:'center',padding:'3rem'}}><p style=${{color:'#666'}}>Loading campaign data from Lakebase synced tables...</p></div>`;
+  const campaigns=data.campaigns||[];
+  const totalReach=campaigns.reduce((s,c)=>s+(c.total_reach||0),0);
+  const totalImps=campaigns.reduce((s,c)=>s+(c.total_impressions||0),0);
+  return html`<div>
+    <div class="grid">
+      <div class="card" style=${{borderLeft:'4px solid #e63946'}}><div class="kpi-label">Total Reach</div><div class="kpi-value">${totalReach.toLocaleString()}</div><div class="kpi-sub">Unique individuals</div></div>
+      <div class="card" style=${{borderLeft:'4px solid #457b9d'}}><div class="kpi-label">Matched Impressions</div><div class="kpi-value">${totalImps.toLocaleString()}</div><div class="kpi-sub">Audience-matched</div></div>
+      <div class="card" style=${{borderLeft:'4px solid #2a9d8f'}}><div class="kpi-label">Active Campaigns</div><div class="kpi-value">${campaigns.length}</div><div class="kpi-sub">Running now</div></div>
+      <div class="card" style=${{borderLeft:'4px solid #264653'}}><div class="kpi-label">Publisher</div><div class="kpi-value">${data.publisher}</div><div class="kpi-sub">Your network</div></div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3 style=${{marginBottom:'1rem',fontSize:'.95rem',color:'#333'}}>Reach by Campaign</h3>
+        <${BarChartSimple} data=${campaigns} labelKey="campaign" valueKey="total_reach" color="#e63946"/>
+      </div>
+      <div class="chart-card">
+        <h3 style=${{marginBottom:'1rem',fontSize:'.95rem',color:'#333'}}>Reach by Device Type</h3>
+        ${devices?html`<div>
+          <${BarChartSimple} data=${devices} labelKey="device_type" valueKey="reach"/>
+          <div style=${{marginTop:'1rem',display:'flex',gap:'.5rem',flexWrap:'wrap'}}>
+            ${devices.map((d,i)=>html`<div key=${i} class="pie-segment"><div class="pie-dot" style=${{background:COLORS[i%COLORS.length]}}></div><span style=${{fontSize:'.8rem'}}>${d.device_type}: ${d.reach?.toLocaleString()}</span></div>`)}
+          </div>
+        </div>`:html`<p style=${{color:'#999'}}>Loading...</p>`}
+      </div>
+    </div>
+    ${regions&&html`<div class="chart-card">
+      <h3 style=${{marginBottom:'1rem',fontSize:'.95rem',color:'#333'}}>Top Regions by Reach</h3>
+      <table><thead><tr><th>Region</th><th style=${{textAlign:'right'}}>Reach</th><th style=${{textAlign:'right'}}>Impressions</th></tr></thead>
+      <tbody>${regions.slice(0,10).map((r,i)=>html`<tr key=${i}><td>${r.marketing_region}</td><td style=${{textAlign:'right',fontWeight:600}}>${r.reach?.toLocaleString()}</td><td style=${{textAlign:'right',color:'#666'}}>${r.impressions?.toLocaleString()}</td></tr>`)}</tbody></table>
+    </div>`}
+    <div class="arch-note"><b>Data source:</b> media_advertising.gold.reach_cube → Lakebase synced table (sub-5s latency)</div>
+  </div>`;
+}
+
+function GenieChat(){
+  const[msgs,setMsgs]=useState([]);
+  const[input,setInput]=useState('');
+  const[loading,setLoading]=useState(false);
+  const suggestions=["What is my total reach across all campaigns?","Which campaign has the highest CTV reach?","Show me reach by marketing region","Compare mobile vs web impressions"];
+  async function ask(q){
+    const question=q||input;if(!question.trim())return;
+    setMsgs(p=>[...p,{role:'user',text:question}]);setInput('');setLoading(true);
+    try{const r=await apiFetch('/genie/ask',{method:'POST',body:JSON.stringify({question})});
+      if(r.status==='error'){setMsgs(p=>[...p,{role:'bot',text:r.message}]);setLoading(false);return;}
+      if(r.status==='not_configured'){setMsgs(p=>[...p,{role:'bot',text:r.message}]);setLoading(false);return;}
+      // Poll for results
+      const cid=r.conversation_id,mid=r.message_id;
+      let attempts=0;
+      const poll=async()=>{
+        attempts++;
+        try{
+          const res=await apiFetch('/genie/result/'+cid+'/'+mid);
+          if(res.status==='processing'&&attempts<30){setTimeout(poll,2000);return;}
+          if(res.status==='error'){setMsgs(p=>[...p,{role:'bot',text:'Error: '+res.message}]);}
+          else{
+            let answer=res.answer||'';
+            if(res.sql)answer+=(answer?'\n\n':'')+'SQL: '+res.sql;
+            if(res.description)answer=res.description+'\n\n'+answer;
+            setMsgs(p=>[...p,{role:'bot',text:answer||'Query completed.'}]);
+          }
+          setLoading(false);
+        }catch(e){setMsgs(p=>[...p,{role:'bot',text:'Poll error: '+e.message}]);setLoading(false);}
+      };
+      setTimeout(poll,2000);
+    }catch(e){setMsgs(p=>[...p,{role:'bot',text:'Error: '+e.message}]);setLoading(false);}
+  }
+  return html`<div class="chat-container">
+    <h2 style=${{marginBottom:'.5rem',fontSize:'1.1rem'}}>Ask Genie About Your Campaigns</h2>
+    <p style=${{color:'#666',fontSize:'.85rem',marginBottom:'1.5rem'}}>NL queries against your isolated data via the campaign_reach_metrics Metric View + UC governance.</p>
+    ${msgs.length===0&&html`<div style=${{marginBottom:'1.5rem',display:'flex',flexWrap:'wrap',gap:'.5rem'}}>${suggestions.map((s,i)=>html`<button key=${i} class="suggestion" onClick=${()=>ask(s)}>${s}</button>`)}</div>`}
+    <div class="chart-card" style=${{minHeight:'250px',maxHeight:'400px',overflowY:'auto',marginBottom:'1rem'}}>
+      ${msgs.length===0&&html`<div style=${{textAlign:'center',padding:'3rem',color:'#ccc'}}><div style=${{fontSize:'2rem'}}>🤖</div><p>Ask a question about your campaign performance</p></div>`}
+      ${msgs.map((m,i)=>html`<div key=${i} class=${'msg'+(m.role==='user'?' msg-user':'')}><div class=${'msg-bubble'+(m.role==='user'?' msg-bubble-user':' msg-bubble-bot')}>${m.text}</div></div>`)}
+      ${loading&&html`<p style=${{color:'#666',fontStyle:'italic'}}>Querying Genie...</p>`}
+    </div>
+    <div class="input-row">
+      <input value=${input} onInput=${e=>setInput(e.target.value)} onKeyDown=${e=>e.key==='Enter'&&ask()} placeholder="Ask about reach, impressions, devices..."/>
+      <button class="btn btn-primary" onClick=${()=>ask()} disabled=${loading||!input.trim()}>Ask</button>
+    </div>
+    <div class="arch-note"><b>Architecture:</b> Genie queries the UC-governed campaign_reach_metrics Metric View. Your question is automatically scoped to your publisher via row-level security.</div>
+  </div>`;
+}
+
+function ReportsView(){
+  const[reports,setReports]=useState([]);
+  const[search,setSearch]=useState('');
+  useEffect(()=>{(search?apiFetch('/reports/search?q='+encodeURIComponent(search)):apiFetch('/reports')).then(r=>{if(r)setReports(r.reports||[]);}).catch(()=>{});},[search]);
+  return html`<div style=${{maxWidth:'900px',margin:'0 auto'}}>
+    <h2 style=${{marginBottom:'.5rem',fontSize:'1.1rem'}}>Saved Reports</h2>
+    <p style=${{color:'#666',fontSize:'.8rem',marginBottom:'1rem'}}>Stored in Lakebase with pgvector embeddings for semantic search</p>
+    <input value=${search} onInput=${e=>setSearch(e.target.value)} placeholder="Search reports (semantic search via pgvector)..." style=${{width:'100%',padding:'.75rem 1rem',borderRadius:'8px',border:'2px solid #e0e0e0',fontSize:'.9rem',marginBottom:'1.5rem'}}/>
+    ${reports.length===0?html`<div class="chart-card" style=${{textAlign:'center',padding:'3rem',color:'#ccc'}}><p>No saved reports yet. Use Genie to create queries, then save them here.</p></div>`:reports.map(r=>html`<div key=${r.report_id} class="card" style=${{marginBottom:'.75rem',display:'flex',justifyContent:'space-between'}}><div><div style=${{fontWeight:600}}>${r.title}</div><div style=${{fontSize:'.8rem',color:'#666',marginTop:'.25rem'}}>${(r.query_text||'').slice(0,80)}</div></div><div style=${{fontSize:'.7rem',color:'#999'}}>${new Date(r.created_at).toLocaleDateString()}</div></div>`)}
+  </div>`;
+}
+
+function SandboxView(){
+  const[sandbox,setSandbox]=useState(null);
+  const[creating,setCreating]=useState(false);
+  const[error,setError]=useState('');
+  async function create(){setCreating(true);setError('');try{const r=await apiFetch('/sandbox/create',{method:'POST'});if(r)setSandbox(r);}catch(e){setError(e.message);}setCreating(false);}
+  async function remove(){if(!sandbox)return;await apiFetch('/sandbox/'+sandbox.branch_id,{method:'DELETE'});setSandbox(null);}
+  return html`<div style=${{maxWidth:'800px',margin:'0 auto'}}>
+    <div class="chart-card" style=${{marginBottom:'2rem'}}>
+      <h2 style=${{marginBottom:'1rem'}}>🔀 Sandbox Mode (Lakebase Branching)</h2>
+      <p style=${{color:'#555',lineHeight:1.6}}>Creates an <b>instant copy-on-write branch</b> of the production database. Zero data duplication. Test audience segments, adjust frequency caps, run what-ifs — all without any risk to production data.</p>
+      <div class="arch-note"><b>How it works:</b> Lakebase creates a branch in ~2 seconds using copy-on-write storage. Only your changes consume additional storage. Branches auto-expire after 1 hour.</div>
+    </div>
+    <div class="sandbox-box">
+      ${!sandbox?html`<div><div style=${{fontSize:'3rem',marginBottom:'1rem'}}>🔀</div>
+        <button class="btn btn-success" style=${{padding:'1rem 2rem',fontSize:'1rem'}} onClick=${create} disabled=${creating}>${creating?'Creating Branch...':'Create Sandbox Branch'}</button>
+        ${error&&html`<p style=${{color:'#e63946',marginTop:'1rem'}}>${error}</p>`}
+      </div>`:html`<div><div style=${{fontSize:'3rem',marginBottom:'.5rem'}}>✅</div><h3 style=${{color:'#2a9d8f'}}>Sandbox Active!</h3>
+        <div style=${{background:'#f5f5f5',borderRadius:'8px',padding:'1rem',marginTop:'1rem',textAlign:'left',fontSize:'.85rem'}}><p><b>Branch:</b> ${sandbox.branch_id}</p><p><b>Expires:</b> ${sandbox.expires_in}</p><p><b>Status:</b> ${sandbox.message}</p></div>
+        <button class="btn btn-primary" style=${{marginTop:'1rem'}} onClick=${remove}>Delete Branch</button>
+      </div>`}
+    </div>
+  </div>`;
+}
+
+function Dashboard({session,onLogout}){
+  const[tab,setTab]=useState('overview');
+  const[features,setFeatures]=useState({});
+  useEffect(()=>{apiFetch('/features').then(d=>{if(d)setFeatures(d.features||{});}).catch(()=>{});},[]);
+  return html`<div>
+    <nav class="nav"><div style=${{display:'flex',alignItems:'center'}}><span style=${{fontSize:'1.25rem',marginRight:'.75rem'}}>📊</span><h1>Campaign Reporting</h1><span class="badge">${session.distributor_name||session.tenant_id}</span></div>
+      <div style=${{display:'flex',gap:'.75rem'}}><button class="btn btn-outline" onClick=${onLogout}>Sign Out</button></div></nav>
+    <div class="tabs">
+      <button class=${'tab'+(tab==='overview'?' active':'')} onClick=${()=>setTab('overview')}>📈 Overview</button>
+      <button class=${'tab'+(tab==='chat'?' active':'')} onClick=${()=>setTab('chat')}>🤖 Ask Genie</button>
+      <button class=${'tab'+(tab==='reports'?' active':'')} onClick=${()=>setTab('reports')}>📋 Reports</button>
+      <button class=${'tab'+(tab==='sandbox'?' active':'')} onClick=${()=>setTab('sandbox')}>🔀 Sandbox</button>
+    </div>
+    <div class="content">
+      ${tab==='overview'&&html`<${MetricsView}/>`}
+      ${tab==='chat'&&html`<${GenieChat}/>`}
+      ${tab==='reports'&&html`<${ReportsView}/>`}
+      ${tab==='sandbox'&&html`<${SandboxView}/>`}
+    </div>
+    <div class="footer">Powered by Databricks Lakebase — Scale-to-zero • Synced Tables • pgvector • UC Governance</div>
+  </div>`;
+}
+
+function App(){
+  const[session,setSession]=useState(null);
+  const[checking,setChecking]=useState(true);
+  useEffect(()=>{
+    if(sessionId){apiFetch('/auth/me').then(d=>{if(d)setSession(d);setChecking(false);}).catch(()=>setChecking(false));}
+    else setChecking(false);
+  },[]);
+  function handleLogout(){localStorage.removeItem('session_id');sessionId=null;setSession(null);}
+  if(checking)return html`<div style=${{padding:'3rem',textAlign:'center',color:'#666'}}>Loading...</div>`;
+  if(!session)return html`<${LoginPage} onLogin=${d=>setSession(d.user||d)}/>`;
+  return html`<${Dashboard} session=${session} onLogout=${handleLogout}/>`;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+</script>
+</body>
+</html>
