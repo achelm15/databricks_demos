@@ -1,0 +1,10 @@
+databricks-connect>=18.0.0,<18.1.0
+databricks-sdk>=0.20.0
+mlflow-skinny[databricks]>=3.0.0
+scikit-learn>=1.4.0
+xgboost>=2.0.0
+matplotlib>=3.8.0
+pandas>=2.1.0
+pyarrow>=14.0.0
+numpy>=1.26.0
+python-dotenv>=1.0.0
