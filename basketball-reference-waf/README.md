@@ -9,6 +9,11 @@ It's the basketball cousin of the `hockey-xg-mlflow` demo: a calibrated probabil
 ("will the home team win, and how confident are we?") that's intuitive even if you don't
 follow the sport.
 
+> **Intended use:** this is an *architecture & MLOps* demo — how to ingest, govern, model,
+> and serve sports data on Databricks. It is **not** a production prediction or betting
+> system: it deliberately uses only team-form features (no injuries, player tracking, or
+> strength-of-schedule adjustment), so read the accuracy as "credible demo," not "an edge."
+
 ## TL;DR
 
 - **9 notebooks**, run `00` → `08` in order.
@@ -56,6 +61,20 @@ designed around that:
   resumable.
 
 Do not lower the throttle below ~3s, and avoid hammering — if you get a 429, just wait it out.
+
+## Data source & licensing
+
+Data is scraped from [Basketball Reference](https://www.basketball-reference.com/)
+(Sports Reference LLC), whose **Terms of Use restrict automated scraping and redistribution**.
+So:
+
+- Fine for an **internal** Databricks demo against public, aggregate stats.
+- **Do not redistribute** the scraped data or hand the raw tables to a customer as a
+  deliverable, and don't publish them.
+- For a real customer engagement, point notebook `01` at the **customer's own data** or a
+  **licensed feed** (NBA Stats API, Sportradar, Genius Sports, etc.). The rest of the
+  pipeline is source-agnostic — only the ingest notebook changes.
+- Keep the polite throttle; treat the source's rate limits as a hard constraint.
 
 ## Data model
 
