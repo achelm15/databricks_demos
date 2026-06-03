@@ -68,7 +68,10 @@ We also add MD5 surrogate keys (both teams in a game share one `game_sk`, so the
 
 ## Gold: a star schema and leakage-safe features
 
-Gold shapes silver into a small star schema (`dim_team`, `dim_date`, `fact_games`, `fact_team_game`) — the `RELY` keys even render an ERD in Catalog Explorer.
+Gold shapes silver into a small star schema (`dim_team`, `dim_date`, `fact_games`, `fact_team_game`) — the `RELY` keys even render an ERD in Catalog Explorer. And because every layer is plain Spark SQL, Unity Catalog tracks the lineage automatically — raw gamelogs through silver into the gold tables, with no extra work:
+
+![Unity Catalog lineage](ss_lineage.png)
+*Column-level lineage in Unity Catalog: `gamelog_raw` (bronze) → `team_game_box` (silver) → `games`, `fact_team_game`, and `game_features` (gold).*
 
 The feature table is where most sports models quietly cheat. To predict a game *before* it happens, every feature must use only games that finished *before* tip-off. We enforce that with a window frame that ends one row early:
 
@@ -96,12 +99,18 @@ with mlflow.start_run(run_name=run_name):
                             signature=sig, input_example=X_train.head(3))
 ```
 
+![Champion run in MLflow](ss_mlflow_run_detail.png)
+*Every run is tracked in MLflow — parameters, metrics (validation and hold-out), and the logged ROC/calibration artifacts — and links straight to its registered model version.*
+
 The most recent season is held out entirely. We score all three models on that unseen season, pick the **champion** by hold-out log-loss, and register it to Unity Catalog with `@champion` and `@challenger` aliases:
 
 ```python
 champ = mlflow.register_model(f"runs:/{champion_run_id}/model", FULL_MODEL)
 client.set_registered_model_alias(FULL_MODEL, "champion", champ.version)
 ```
+
+![Registered model in Unity Catalog](ss_uc_model.png)
+*The model is governed like any other UC asset: versions, `@champion`/`@challenger` aliases, owner, tags, and an activity log — so promoting or rolling back is one alias change.*
 
 ## Results
 
