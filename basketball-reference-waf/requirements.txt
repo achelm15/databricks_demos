@@ -1,0 +1,18 @@
+# basketball-reference-waf — dependencies
+# databricks-connect bundles PySpark; do NOT install standalone pyspark alongside it.
+# Pin the connect minor to match the workspace DBR (18.0.x here).
+databricks-connect>=18.0.0,<18.1.0
+databricks-sdk>=0.20.0
+python-dotenv>=1.0.0
+
+# Ingest — Basketball Reference scraper (pure HTTP, no Selenium/browser)
+basketball_reference_web_scraper>=4.15.0
+
+# Modeling
+pandas>=2.1.0
+numpy>=1.26.0
+scikit-learn>=1.4.0
+xgboost>=2.0.0
+mlflow-skinny[databricks]>=2.14.0
+matplotlib>=3.8.0
+pyarrow>=14.0.0
