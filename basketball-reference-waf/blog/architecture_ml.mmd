@@ -1,0 +1,31 @@
+flowchart TB
+    classDef gold fill:#fffde7,stroke:#c8941a,stroke-width:2px,color:#7a5c00
+    classDef train fill:#ede7f6,stroke:#5c35b5,stroke-width:2px,color:#3a1f8a
+    classDef registry fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#0d3b75
+    classDef infer fill:#e0f7fa,stroke:#00838f,stroke-width:2px,color:#004d56
+    classDef pred fill:#e8eaf6,stroke:#3949ab,stroke-width:2px,color:#1a237e
+
+    FEAT[["game_features<br/>gold table"]]:::gold
+
+    subgraph TRAIN["06 Train · MLflow Tracking"]
+        T01["LogReg"]:::train
+        T02["RandomForest"]:::train
+        T03["XGBoost"]:::train
+    end
+
+    subgraph REG["07 UC Model Registry"]
+        R01["@champion"]:::registry
+        R02["@challenger"]:::registry
+    end
+
+    subgraph INF["08 Batch Inference"]
+        I01["Score all games"]:::infer
+    end
+
+    PRED[["gold.game_predictions"]]:::pred
+
+    FEAT --> T01 & T02 & T03
+    T01 & T02 --> R01
+    T03 --> R02
+    R01 & R02 --> I01
+    I01 --> PRED
