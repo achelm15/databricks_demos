@@ -1,0 +1,18 @@
+flowchart TB
+    classDef source fill:#d4edda,stroke:#5a9a6f,stroke-width:2px,color:#1a1a1a
+    classDef ingest fill:#eef7f0,stroke:#5a9a6f,stroke-width:2px,color:#1a1a1a
+    classDef bronze fill:#fff3e0,stroke:#bf7c2a,stroke-width:2px,color:#7a4f1a
+    classDef silver fill:#f2f2f2,stroke:#888888,stroke-width:2px,color:#333333
+    classDef gold fill:#fffde7,stroke:#c8941a,stroke-width:2px,color:#7a5c00
+
+    SRC(["Basketball Reference<br/>team game logs"]):::source
+    N01["01 Ingest<br/>throttled · idempotent<br/>UC Volume: raw gamelog JSON"]:::ingest
+    B01[["BRONZE · 02 Auto Loader<br/>gamelog_raw (VARIANT)"]]:::bronze
+    S01[["SILVER · 03<br/>team_game_box<br/>Four Factors"]]:::silver
+    S02[["SILVER · 03<br/>games<br/>home_win label"]]:::silver
+    G01[["GOLD · 04<br/>fact_games · fact_team_game<br/>dim_team · dim_date"]]:::gold
+    G02[["GOLD · 05<br/>game_features<br/>leakage-safe"]]:::gold
+
+    SRC --> N01 --> B01
+    B01 --> S01 & S02
+    S01 & S02 --> G01 --> G02
