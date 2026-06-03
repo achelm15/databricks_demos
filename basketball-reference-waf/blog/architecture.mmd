@@ -1,0 +1,65 @@
+flowchart LR
+    classDef source fill:#2d6a4f,stroke:#1b4332,color:#d8f3dc,rx:8
+    classDef ingest fill:#52b788,stroke:#2d6a4f,color:#081c15,rx:8
+    classDef volume fill:#74c69d,stroke:#40916c,color:#081c15,rx:8
+    classDef bronze fill:#b5651d,stroke:#7f4012,color:#fff3e0,rx:8
+    classDef bronzeTable fill:#d4824a,stroke:#b5651d,color:#fff3e0,rx:8
+    classDef silver fill:#607d8b,stroke:#37474f,color:#eceff1,rx:8
+    classDef silverTable fill:#90a4ae,stroke:#607d8b,color:#1c313a,rx:8
+    classDef gold fill:#f59e0b,stroke:#b45309,color:#1c0a00,rx:8
+    classDef goldTable fill:#fcd34d,stroke:#f59e0b,color:#1c0a00,rx:8
+    classDef ml fill:#1e40af,stroke:#1e3a8a,color:#dbeafe,rx:8
+    classDef mlTable fill:#3b82f6,stroke:#1e40af,color:#dbeafe,rx:8
+    classDef mlOutput fill:#6366f1,stroke:#4338ca,color:#e0e7ff,rx:8
+
+    SRC([Basketball Reference\nteam game logs]):::source
+
+    subgraph ING [" "]
+        direction LR
+        INGEST(["01 ingest\nthrottled · idempotent"]):::ingest
+        VOL[("UC Volume\nraw gamelog JSON")]:::volume
+    end
+
+    subgraph BRZ ["  BRONZE  "]
+        direction LR
+        AUTOLOAD(["02 Auto Loader"]):::bronze
+        RAW(["gamelog_raw\nVARIANT"]):::bronzeTable
+    end
+
+    subgraph SLV ["  SILVER  "]
+        direction LR
+        TRANSFORM(["03 type + Four Factors"]):::silver
+        BOXSCORE(["team_game_box\nFour Factors"]):::silverTable
+        GAMES(["games\nhome_win label"]):::silverTable
+    end
+
+    subgraph GLD ["  GOLD  "]
+        direction LR
+        STAR(["04 star schema"]):::gold
+        DIMS(["dim_team / dim_date\nfact_games / fact_team_game"]):::goldTable
+        FEATURES(["05 game_features\nleakage-safe"]):::goldTable
+    end
+
+    subgraph ML ["  ML & GOVERNANCE  "]
+        direction LR
+        TRAIN(["06 MLflow\nLogReg · RandomForest · XGBoost"]):::ml
+        REGISTRY(["07 UC Model Registry\n@champion / @challenger"]):::mlTable
+        BATCH(["08 batch inference"]):::ml
+        PREDS(["gold.game_predictions"]):::mlOutput
+    end
+
+    SRC --> INGEST
+    INGEST --> VOL
+    VOL --> AUTOLOAD
+    AUTOLOAD --> RAW
+    RAW --> TRANSFORM
+    TRANSFORM --> BOXSCORE
+    TRANSFORM --> GAMES
+    BOXSCORE --> STAR
+    GAMES --> STAR
+    STAR --> DIMS
+    DIMS --> FEATURES
+    FEATURES --> TRAIN
+    TRAIN --> REGISTRY
+    REGISTRY --> BATCH
+    BATCH --> PREDS

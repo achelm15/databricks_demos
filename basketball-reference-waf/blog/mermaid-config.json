@@ -1,0 +1,19 @@
+{
+  "theme": "base",
+  "themeVariables": {
+    "background": "#ffffff",
+    "primaryColor": "#f8f9fa",
+    "primaryTextColor": "#212529",
+    "primaryBorderColor": "#dee2e6",
+    "lineColor": "#6c757d",
+    "fontFamily": "ui-sans-serif, system-ui, -apple-system, sans-serif",
+    "fontSize": "15px"
+  },
+  "flowchart": {
+    "curve": "basis",
+    "padding": 24,
+    "nodeSpacing": 36,
+    "rankSpacing": 56,
+    "htmlLabels": true
+  }
+}
