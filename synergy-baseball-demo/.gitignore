@@ -1,0 +1,12 @@
+# Secrets — NEVER commit. (Root .gitignore also covers this; belt-and-suspenders for the handoff.)
+.env
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
