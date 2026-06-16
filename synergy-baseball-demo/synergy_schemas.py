@@ -1,8 +1,7 @@
 """Entity registry + silver column maps for the Synergy Baseball demo.
 
-Covers EVERY bulk /filter data endpoint in the Synergy OpenAPI spec
-(/external/swagger/v1/swagger.json). Generated from the verified mlb_pipelines accelerator
-(src/synergy/<entity>/endpoint.yml) so the demo and the production pipeline stay in lockstep.
+Covers EVERY bulk /filter data endpoint in the Synergy OpenAPI spec, with every column path verified
+against the spec at `/external/swagger/v1/swagger.json`.
 
 Silver is built with VARIANT-path navigation (``data:a:b::type``); each entity lists
 ``(variant_path, output_alias, spark_type)`` triples that 03_silver turns into a typed SELECT.
@@ -963,7 +962,7 @@ SILVER_COLUMNS = {
     ],
 }
 
-# Natural keys (per the accelerator) — used for the silver dedup/PK.
+# Natural keys (per the OpenAPI spec) — used for the silver dedup/PK.
 PRIMARY_KEYS = {
     "competitions": ['id'],
     "conferences": ['id'],

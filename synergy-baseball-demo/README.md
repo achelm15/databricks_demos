@@ -37,8 +37,7 @@ dup of the counting `/filter` and is skipped.
 
 > **Verified:** the whole medallion has been run end-to-end via Databricks Connect on synthetic data —
 > all 19 bronze + 19 typed silver tables build with populated nested fields (e.g. `events` 272 cols,
-> `games` 40), zero errors. Projections are generated from the same OpenAPI spec as the production
-> `mlb_pipelines` accelerator, so they stay in lockstep.
+> `games` 40), zero errors. Every column path is verified against the Synergy OpenAPI spec.
 
 ## The data flow
 
@@ -65,7 +64,7 @@ ingest — you opt into columns by adding them to `synergy_schemas.SILVER_COLUMN
 **Lookup helpers (not ingestion).** The spec's 12 `GET /api/<entity>/{id}` endpoints return the *identical
 schema* to their `/filter` list item, so they add no data to the medallion. The client exposes them as
 spot-check / enrichment helpers instead: `api.get_by_id("teams", "T0001")` and `api.sign_videos([...])`
-(for `POST /api/videos/sign`). Mirrors the `mlb_pipelines` accelerator's `_lib` helpers.
+(for `POST /api/videos/sign`).
 
 ## Setup
 
@@ -138,12 +137,12 @@ Ingestion is complete for all 19 entities; here's the runway to a customer-ready
    - **Scope** → `SYNERGY_START_DATE`/`END_DATE`/`SEASON` and any team/league filters in `01_ingest`.
    - **Branding** → dashboard title + Genie sample questions in `05`.
 
-### Provenance
+### Design note
 
-`synergy_client.py` and the silver column maps are ported from the production-grade, config-driven
-`mlb_pipelines` Synergy accelerator (the DABs medallion). This demo trades that engine for plain
-follow-along notebooks — the API contract, pagination, and projections are the same, so anything proven
-here lifts straight back into the accelerator (and vice-versa).
+The client, schemas, and notebooks are deliberately plain Python + SQL so the whole flow is easy to
+follow and adapt. The API contract (OAuth, `POST /api/<entity>/filter` pagination) and the silver column
+projections are all verified against the Synergy OpenAPI spec, so what runs here is what runs against the
+live API once credentials are in place.
 
 > ⚠️ **Never commit credentials.** `.env` is gitignored; real `client_id`/`client_secret` live only in
 > `.env` (local) or the `synergy` secret scope (workspace).

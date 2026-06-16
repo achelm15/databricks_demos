@@ -4,9 +4,6 @@ Auth is **OAuth2 client-credentials**: exchange client_id/client_secret for a be
 data route is ``POST /api/<entity>/filter`` returning ``{"result": [...], "totalRecords": N}``. We page
 with ``skip``/``take`` until all rows are pulled.
 
-Ported from the agnostic ``mlb_pipelines`` Synergy accelerator (src/synergy/_lib.py) into a demo-friendly
-class.
-
 Credentials are NEVER hardcoded — the notebooks resolve them from a local ``.env`` or a Databricks secret
 scope and pass them in.
 """
@@ -23,7 +20,7 @@ PAGE_SIZE = 1000
 
 # GET /api/<entity>/{id} single-record lookups. These return the IDENTICAL schema to the matching
 # /api/<entity>/filter list item, so they carry no extra data to ingest — they're convenience lookups for
-# enrichment / spot checks, not a bulk source. (Mirrors the mlb_pipelines accelerator's _lib.LOOKUP_PATHS.)
+# enrichment / spot checks, not a bulk source.
 LOOKUP_PATHS = {
     "teams": "/api/teams/{id}",
     "games": "/api/games/{id}",
