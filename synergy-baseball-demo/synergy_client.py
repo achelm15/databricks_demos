@@ -21,6 +21,24 @@ TOKEN_URL = "https://auth.synergysportstech.com/connect/token"
 API_SCOPE = "api.baseball.external"
 PAGE_SIZE = 1000
 
+# GET /api/<entity>/{id} single-record lookups. These return the IDENTICAL schema to the matching
+# /api/<entity>/filter list item, so they carry no extra data to ingest — they're convenience lookups for
+# enrichment / spot checks, not a bulk source. (Mirrors the mlb_pipelines accelerator's _lib.LOOKUP_PATHS.)
+LOOKUP_PATHS = {
+    "teams": "/api/teams/{id}",
+    "games": "/api/games/{id}",
+    "players": "/api/players/{id}",
+    "events": "/api/events/{id}",
+    "leagues": "/api/leagues/{id}",
+    "divisions": "/api/divisions/{id}",
+    "conferences": "/api/conferences/{id}",
+    "competitions": "/api/competitions/{id}",
+    "venues": "/api/venues/{id}",
+    "umpires": "/api/umpires/{id}",
+    "practice_events": "/api/practice/events/{id}",
+    "practice_sessions": "/api/practice/sessions/{id}",
+}
+
 
 class SynergyAPIError(RuntimeError):
     pass
@@ -32,6 +50,7 @@ class SynergyAPI:
     >>> api = SynergyAPI(client_id, client_secret)        # OAuth token fetched on init
     >>> teams = api.filter("/api/teams/filter")           # auto-paginated -> list[dict]
     >>> games = api.get_games(min_date="2024-04-01", max_date="2024-04-07", season=2024)
+    >>> one_team = api.get_by_id("teams", "T0001")        # single-record lookup -> dict
     """
 
     def __init__(self, client_id: str, client_secret: str, *, timeout: int = 120):
@@ -96,3 +115,26 @@ class SynergyAPI:
         if season is not None:
             body["season"] = season
         return self.filter("/api/games/filter", body or None)
+
+    # ----------------------------------------------------- lookups & utility
+    # GET /{id} returns the same schema as the /filter list item, so these are spot-check / enrichment
+    # lookups, not a bulk source. Reuse the session token set in __init__.
+    def get_by_id(self, entity: str, record_id: str) -> dict:
+        """Fetch one record via ``GET /api/<entity>/{id}``. Returns the dict (or ``{}`` on 404)."""
+        if entity not in LOOKUP_PATHS:
+            raise KeyError(f"no lookup path for {entity!r}; known: {sorted(LOOKUP_PATHS)}")
+        url = BASE_URL + LOOKUP_PATHS[entity].format(id=record_id)
+        r = self.session.get(url, timeout=self.timeout)
+        if r.status_code == 404:
+            return {}
+        if r.status_code != 200:
+            raise SynergyAPIError(f"GET {url} failed ({r.status_code}): {r.text[:200]}")
+        return r.json()
+
+    def sign_videos(self, urls: list[str]) -> dict:
+        """``POST /api/videos/sign`` — exchange video URLs for signed playback URLs (utility, not ingestion)."""
+        url = BASE_URL + "/api/videos/sign"
+        r = self.session.post(url, json={"urls": list(urls)}, timeout=self.timeout)
+        if r.status_code != 200:
+            raise SynergyAPIError(f"POST /api/videos/sign failed ({r.status_code}): {r.text[:200]}")
+        return r.json()
