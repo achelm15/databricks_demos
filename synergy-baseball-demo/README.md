@@ -22,8 +22,9 @@ silver.
 | `01_ingest_synergy_api.ipynb` | ✅ | Loop every entity in `ENTITIES` → land JSON in the Volume (reference = pull all, date_scoped = windowed). |
 | `02_bronze_autoloader.ipynb` | ✅ | Auto Loader JSON → `bronze_<entity>` (`data VARIANT`) for every entity. |
 | `03_silver_transformations.ipynb` | ✅ | Shred VARIANT → typed `silver_<entity>` for every entity. |
-| `04_gold_star_schema.ipynb` | 🟡 TODO | `dim_team` worked as a template; dims/facts for the SA to finish. |
-| `05_genie_and_dashboard.ipynb` | 🟡 TODO | Plan for the AI/BI dashboard + Genie space over gold. |
+| `04_data_quality.ipynb` | ✅ | **DQX** gate — validates every silver table (key-not-null baseline), quarantines failures so bad data never reaches gold. |
+| `05_gold_star_schema.ipynb` | 🟡 TODO | `dim_team` worked as a template; dims/facts for the SA to finish. |
+| `06_genie_and_dashboard.ipynb` | 🟡 TODO | Plan for the AI/BI dashboard + Genie space over gold. |
 | `tests/generate_fake_data.ipynb` | ✅ | Schema-driven synthetic data for **all** entities → run 02/03 **without credentials**. |
 | `.env.example` | ✅ | Copy to `.env`. Creds resolve from `.env` or a `synergy` secret scope. |
 
@@ -52,9 +53,11 @@ Synergy API ──01──▶ /Volumes/.../raw_data/<entity>/*.json      (all 19
                           ▼
               {schema}_silver.silver_<entity>        (typed, conformed)
                           │
-                    04 🟡 (dim_team/dim_player/fact_game ...)
+                    04 (DQX gate — valid rows stay, failures → {schema}_quarantine.<entity>)
                           ▼
-              {schema}_gold.*  ──▶ 05 🟡 Genie space + dashboard
+                    05 🟡 (dim_team/dim_player/fact_game ...)
+                          ▼
+              {schema}_gold.*  ──▶ 06 🟡 Genie space + dashboard
 ```
 
 **Why VARIANT, not `from_json`?** Synergy payloads are deeply nested and evolve; landing the whole row as
@@ -87,6 +90,9 @@ spot-check / enrichment helpers instead: `api.get_by_id("teams", "T0001")` and `
 01_ingest_synergy_api     →  pulls every entity into the Volume
 02_bronze_autoloader      →  Auto Loads them to bronze_<entity>
 03_silver_transformations →  builds typed silver_<entity> for all 19 entities
+04_data_quality           →  DQX gate: validates silver, quarantines failures
+05_gold_star_schema       →  🟡 star schema (SA finishes)
+06_genie_and_dashboard    →  🟡 Genie + dashboard (SA finishes)
 ```
 
 ### No Synergy credentials yet?
@@ -97,10 +103,9 @@ before live creds are provisioned.
 
 ## Cross-source conformance — the key idea
 
-`silver_teams.external_id_mlbam` (and `silver_games.external_id_mlbam`) is the **MLBAM id** — the same key
-the broader MLB warehouse joins on (`statsapi.silver.teams`, `gold.dim_team`). That's the hook that ties
-Synergy into everything else for the customer: pitch/event data keyed to the same teams and players as
-Statcast, GUMBO, and the rest.
+`silver_teams.external_id_mlbam` (and `silver_games.external_id_mlbam`) is the **MLBAM id** — the standard
+cross-source join key in baseball data. Carrying it through to gold means this Synergy data lines up with
+any other MLBAM-keyed source the customer has, on the same team and player ids.
 
 ## Notes & gotchas (learned running this)
 
@@ -127,15 +132,18 @@ Ingestion is complete for all 19 entities; here's the runway to a customer-ready
    (every scalar leaf in the spec). For the customer, the `events_pitch_subset` / `events_defense_subset` /
    `events_game_state_subset` tables are the leaner, ready-to-use views. Trim `SILVER_COLUMNS` if a slimmer
    `events` table is preferred.
-2. **Build gold (`04`)** — `dim_team` is worked as a template. Add `dim_player` (from `players` /
+2. **Extend the DQX checks (`04`)** — the gate ships with a key-not-null baseline. Add business rules
+   (date ranges, enum membership, referential checks against your dims) so the customer's quarantine table
+   reflects real quality issues.
+3. **Build gold (`05`)** — `dim_team` is worked as a template. Add `dim_player` (from `players` /
    `players_teamhistory`), `dim_date`, `fact_game`, `fact_event`/`fact_pitch` (from the event tables).
-   Declare RELY PK/FK constraints (worked example in `04`) so AI/BI + Genie can infer the joins.
-3. **Genie + dashboard (`05`)** — build an AI/BI dashboard + Genie space over the gold schema (steps in the
+   Declare RELY PK/FK constraints (worked example in `05`) so AI/BI + Genie can infer the joins.
+4. **Genie + dashboard (`06`)** — build an AI/BI dashboard + Genie space over the gold schema (steps in the
    notebook). Set `SQL_WAREHOUSE_ID` and curate customer questions.
-4. **Customer customization hooks:**
+5. **Customer customization hooks:**
    - **Credentials** → the customer's Synergy `client_id`/`client_secret` (secret scope `synergy`).
    - **Scope** → `SYNERGY_START_DATE`/`END_DATE`/`SEASON` and any team/league filters in `01_ingest`.
-   - **Branding** → dashboard title + Genie sample questions in `05`.
+   - **Branding** → dashboard title + Genie sample questions in `06`.
 
 ### Design note
 
