@@ -55,6 +55,11 @@ Synergy API ──01──▶ /Volumes/.../raw_data/<entity>/*.json      (all 19
 `data VARIANT` and navigating with `data:home_team:id::string` in silver means new fields never break
 ingest — you opt into columns by adding them to `synergy_schemas.SILVER_COLUMNS`.
 
+**Lookup helpers (not ingestion).** The spec's 12 `GET /api/<entity>/{id}` endpoints return the *identical
+schema* to their `/filter` list item, so they add no data to the medallion. The client exposes them as
+spot-check / enrichment helpers instead: `api.get_by_id("teams", "T0001")` and `api.sign_videos([...])`
+(for `POST /api/videos/sign`). Mirrors the `mlb_pipelines` accelerator's `_lib` helpers.
+
 ## Setup
 
 1. **Install deps** (local): `pip install -r requirements.txt`
