@@ -16,7 +16,7 @@ silver.
 
 | File | Status | What it does |
 |---|---|---|
-| `synergy_client.py` | ✅ | `SynergyAPI` — OAuth2 client-credentials + auto-paginated `POST /api/<entity>/filter`. |
+| `synergy_client.py` | ✅ | `SynergyAPI` — OAuth2 client-credentials + auto-paginated `POST /api/<entity>/filter`, plus `get_by_id()` / `sign_videos()` lookup helpers. |
 | `synergy_schemas.py` | ✅ | `ENTITIES` registry (all 19) + `SILVER_COLUMNS` `(path, alias, type)` maps, verified against the OpenAPI spec. The extension point. |
 | `00_verify_connection.ipynb` | ✅ | Spark + UC schemas/Volume + Synergy OAuth probe. **Run first.** |
 | `01_ingest_synergy_api.ipynb` | ✅ | Loop every entity in `ENTITIES` → land JSON in the Volume (reference = pull all, date_scoped = windowed). |
@@ -30,8 +30,15 @@ silver.
 **The 19 entities** (every bulk `/filter` endpoint in the spec): `teams`, `games`, `players`,
 `players_teamhistory`, `events`, `events_pitch_subset`, `events_defense_subset`, `events_game_state_subset`,
 `leagues`, `divisions`, `conferences`, `competitions`, `venues`, `umpires`, `practice_sessions`,
-`practice_events`, `practice_training_workout`, `search_players`, `search_teams`. Excluded (not bulk data):
-`*/filter-no-count` (redundant), `videos/sign` (utility), `GET /{id}` (single-record lookups).
+`practice_events`, `practice_training_workout`, `search_players`, `search_teams`. The other spec paths
+carry no new data: the 12 `GET /{id}` lookups (identical schema to the `/filter` item) + `videos/sign` are
+exposed as **client helpers** (`get_by_id` / `sign_videos`), not tables; `*/filter-no-count` is a redundant
+dup of the counting `/filter` and is skipped.
+
+> **Verified:** the whole medallion has been run end-to-end via Databricks Connect on synthetic data —
+> all 19 bronze + 19 typed silver tables build with populated nested fields (e.g. `events` 272 cols,
+> `games` 40), zero errors. Projections are generated from the same OpenAPI spec as the production
+> `mlb_pipelines` accelerator, so they stay in lockstep.
 
 ## The data flow
 
@@ -95,6 +102,21 @@ before live creds are provisioned.
 the broader MLB warehouse joins on (`statsapi.silver.teams`, `gold.dim_team`). That's the hook that ties
 Synergy into everything else for the customer: pitch/event data keyed to the same teams and players as
 Statcast, GUMBO, and the rest.
+
+## Notes & gotchas (learned running this)
+
+- **Auth from a laptop:** Databricks Connect picks up auth from the SDK config chain. The cleanest path is
+  a CLI OAuth profile (`databricks auth login`, then `DATABRICKS_CONFIG_PROFILE=<profile>`). A stale PAT in
+  `.env` will override the profile and 403 — leave `DATABRICKS_TOKEN` blank if you use a profile.
+- **Writing to the Volume over Connect:** the notebooks land JSON with the **SDK Files API**
+  (`w.files.upload`), *not* local `open()`/`os` — a laptop has no `/Volumes` FUSE mount, so plain file I/O
+  only works inside a Databricks cluster. (This is why `01_ingest` and `generate_fake_data` use `upload_json`.)
+- **Bronze needs `cloudFiles.inferColumnTypes`:** without it Auto Loader reads nested JSON objects as
+  *strings*, and every nested silver column (`league_name`, `home_team_name`, …) comes out NULL. It's set
+  in `02_bronze_autoloader`.
+- **Silver casts via `data:path::type`** (full-refresh `CREATE OR REPLACE`, since Spark Connect can't
+  `MERGE`). If a messier live entity has junk values that hard-fail a cast, switch that column to
+  `try_cast(data:path::string AS type)` (nulls bad values instead of erroring).
 
 ---
 
