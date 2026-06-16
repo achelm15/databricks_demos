@@ -5,9 +5,10 @@ data into a Databricks medallion (bronze → silver → gold) on Unity Catalog. 
 laptop via Databricks Connect *or* inside a Databricks Git Folder), Auto Loader bronze, VARIANT-shredded
 silver.
 
-> **This is a STARTER for handoff.** The framework + a worked example (teams + games) run end-to-end
-> through Silver. Gold and the Genie/dashboard layer are scaffolded as `🟡 TODO` stubs for the receiving
-> SA to finish for the customer. See **[For the SA finishing this](#for-the-sa-finishing-this)** below.
+> **This is a STARTER for handoff.** It ingests **every bulk data endpoint in the Synergy OpenAPI spec**
+> (19 entities) end-to-end through Silver, with projections verified against the spec. Gold and the
+> Genie/dashboard layer are scaffolded as `🟡 TODO` stubs for the receiving SA to finish for the customer.
+> See **[For the SA finishing this](#for-the-sa-finishing-this)** below.
 
 ---
 
@@ -15,29 +16,35 @@ silver.
 
 | File | Status | What it does |
 |---|---|---|
-| `synergy_client.py` | ✅ | `SynergyAPI` — OAuth2 client-credentials + auto-paginated `POST /api/<entity>/filter`. `get_teams()`, `get_games()`. |
-| `synergy_schemas.py` | ✅ | `ENTITIES` registry + `SILVER_COLUMNS` `(path, alias, type)` maps for **teams** + **games**. The extension point. |
+| `synergy_client.py` | ✅ | `SynergyAPI` — OAuth2 client-credentials + auto-paginated `POST /api/<entity>/filter`. |
+| `synergy_schemas.py` | ✅ | `ENTITIES` registry (all 19) + `SILVER_COLUMNS` `(path, alias, type)` maps, verified against the OpenAPI spec. The extension point. |
 | `00_verify_connection.ipynb` | ✅ | Spark + UC schemas/Volume + Synergy OAuth probe. **Run first.** |
-| `01_ingest_synergy_api.ipynb` | ✅ | Pull teams (reference) + games (date window) → land JSON in the Volume. |
-| `02_bronze_autoloader.ipynb` | ✅ | Auto Loader JSON → `bronze_<entity>` (`data VARIANT`). |
-| `03_silver_transformations.ipynb` | ✅ | Shred VARIANT → typed `silver_teams`, `silver_games`. |
+| `01_ingest_synergy_api.ipynb` | ✅ | Loop every entity in `ENTITIES` → land JSON in the Volume (reference = pull all, date_scoped = windowed). |
+| `02_bronze_autoloader.ipynb` | ✅ | Auto Loader JSON → `bronze_<entity>` (`data VARIANT`) for every entity. |
+| `03_silver_transformations.ipynb` | ✅ | Shred VARIANT → typed `silver_<entity>` for every entity. |
 | `04_gold_star_schema.ipynb` | 🟡 TODO | `dim_team` worked as a template; dims/facts for the SA to finish. |
 | `05_genie_and_dashboard.ipynb` | 🟡 TODO | Plan for the AI/BI dashboard + Genie space over gold. |
-| `tests/generate_fake_data.ipynb` | ✅ | Synthetic teams/games → run 02/03 **without credentials**. |
+| `tests/generate_fake_data.ipynb` | ✅ | Schema-driven synthetic data for **all** entities → run 02/03 **without credentials**. |
 | `.env.example` | ✅ | Copy to `.env`. Creds resolve from `.env` or a `synergy` secret scope. |
+
+**The 19 entities** (every bulk `/filter` endpoint in the spec): `teams`, `games`, `players`,
+`players_teamhistory`, `events`, `events_pitch_subset`, `events_defense_subset`, `events_game_state_subset`,
+`leagues`, `divisions`, `conferences`, `competitions`, `venues`, `umpires`, `practice_sessions`,
+`practice_events`, `practice_training_workout`, `search_players`, `search_teams`. Excluded (not bulk data):
+`*/filter-no-count` (redundant), `videos/sign` (utility), `GET /{id}` (single-record lookups).
 
 ## The data flow
 
 ```
-Synergy API ──01──▶ /Volumes/.../raw_data/{teams,games}/*.json
+Synergy API ──01──▶ /Volumes/.../raw_data/<entity>/*.json      (all 19 entities)
                           │
                     02 (Auto Loader, cloudFiles JSON → VARIANT)
                           ▼
-              {schema}_bronze.bronze_{teams,games}   (data VARIANT + _ingestion_timestamp)
+              {schema}_bronze.bronze_<entity>        (data VARIANT + _ingestion_timestamp)
                           │
                     03 (data:path::type, dedup to natural key)
                           ▼
-              {schema}_silver.silver_{teams,games}   (typed, conformed)
+              {schema}_silver.silver_<entity>        (typed, conformed)
                           │
                     04 🟡 (dim_team/dim_player/fact_game ...)
                           ▼
@@ -66,36 +73,37 @@ ingest — you opt into columns by adding them to `synergy_schemas.SILVER_COLUMN
 
 ```
 00_verify_connection      →  proves Spark + UC + Synergy auth all work
-01_ingest_synergy_api     →  pulls teams + games into the Volume
-02_bronze_autoloader      →  Auto Loads them to bronze
-03_silver_transformations →  builds typed silver_teams, silver_games
+01_ingest_synergy_api     →  pulls every entity into the Volume
+02_bronze_autoloader      →  Auto Loads them to bronze_<entity>
+03_silver_transformations →  builds typed silver_<entity> for all 19 entities
 ```
 
 ### No Synergy credentials yet?
 
-Run **`tests/generate_fake_data.ipynb`** instead of `01`. It writes synthetic teams + games (matching the
-Synergy `result` row shape) into the Volume, then `02` → `03` work end-to-end offline. Perfect for kicking
-the tires before live creds are provisioned.
+Run **`tests/generate_fake_data.ipynb`** instead of `01`. It writes schema-driven synthetic data for **all
+19 entities** into the Volume, then `02` → `03` work end-to-end offline. Perfect for kicking the tires
+before live creds are provisioned.
 
 ## Cross-source conformance — the key idea
 
-`silver_teams.external_id_mlbam` is the **MLBAM team id** — the same key the broader MLB warehouse joins on
-(`statsapi.silver.teams`, `gold.dim_team`). That's the hook that ties Synergy into everything else for the
-customer: pitch/event data keyed to the same teams and players as Statcast, GUMBO, and the rest.
+`silver_teams.external_id_mlbam` (and `silver_games.external_id_mlbam`) is the **MLBAM id** — the same key
+the broader MLB warehouse joins on (`statsapi.silver.teams`, `gold.dim_team`). That's the hook that ties
+Synergy into everything else for the customer: pitch/event data keyed to the same teams and players as
+Statcast, GUMBO, and the rest.
 
 ---
 
 ## For the SA finishing this
 
-The framework is done; here's the runway to a customer-ready demo:
+Ingestion is complete for all 19 entities; here's the runway to a customer-ready demo:
 
-1. **Fan out entities** — the customer will want more than teams + games (players, venues, events, pitch
-   subsets). For each: register it in `synergy_schemas.ENTITIES`, add its `SILVER_COLUMNS` map (copy the
-   projection straight from the `mlb_pipelines` accelerator — `src/synergy/<entity>/endpoint.yml`), and add
-   a pull in `01_ingest`. `02`/`03` pick it up automatically from the registry.
-2. **Build gold (`04`)** — `dim_team` is worked as a template. Add `dim_player`, `dim_date`, `fact_game`,
-   and (once events are ingested) `fact_event`/`fact_pitch`. Declare RELY PK/FK constraints (worked example
-   in `04`) so AI/BI + Genie can infer the joins.
+1. **Curate the wide tables** — `events` (272 cols) and `practice_events` (265 cols) are comprehensive
+   (every scalar leaf in the spec). For the customer, the `events_pitch_subset` / `events_defense_subset` /
+   `events_game_state_subset` tables are the leaner, ready-to-use views. Trim `SILVER_COLUMNS` if a slimmer
+   `events` table is preferred.
+2. **Build gold (`04`)** — `dim_team` is worked as a template. Add `dim_player` (from `players` /
+   `players_teamhistory`), `dim_date`, `fact_game`, `fact_event`/`fact_pitch` (from the event tables).
+   Declare RELY PK/FK constraints (worked example in `04`) so AI/BI + Genie can infer the joins.
 3. **Genie + dashboard (`05`)** — build an AI/BI dashboard + Genie space over the gold schema (steps in the
    notebook). Set `SQL_WAREHOUSE_ID` and curate customer questions.
 4. **Customer customization hooks:**
