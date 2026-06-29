@@ -1,0 +1,103 @@
+# Synergy Baseball pipeline — Ingest → Gold, as a single Databricks Job.
+#
+# Chains notebooks 01→05 with task dependencies. Config is exposed as JOB-LEVEL parameters (defaults come
+# from the bundle variables) so they show in the Jobs UI "Parameters" panel and are overridable at "Run
+# now". Each task maps the job parameters it needs into notebook base_parameters via {{job.parameters.*}};
+# the notebooks' "Job parameter bridge" cell mirrors those into os.environ, so the same notebook runs
+# identically as a job, in a workspace, or locally via .env.
+#
+# Intentionally excludes 00_verify_connection (manual smoke test) and 06_genie_and_dashboard (optional,
+# the implementing team may not need the Genie space).
+#
+# Prereqs in the target workspace:
+#   - Serverless jobs enabled (tasks run on a serverless environment; see `environments` below).
+#   - A `synergy` secret scope with `client_id` / `client_secret`, readable by the job's run identity.
+#   - The `catalog` already exists and the run identity can create schemas/volumes/tables in it.
+
+resources:
+  jobs:
+    synergy_pipeline:
+      name: synergy-baseball-pipeline
+      max_concurrent_runs: 1   # the pipeline is not safe to run concurrently (checkpoints, CREATE OR REPLACE)
+
+      # Job-level parameters — shown in the UI and overridable at "Run now". Defaults come from bundle vars.
+      parameters:
+        - name: UC_CATALOG
+          default: ${var.catalog}
+        - name: UC_SCHEMA
+          default: ${var.schema}
+        - name: SYNERGY_START_DATE
+          default: ${var.start_date}
+        - name: SYNERGY_END_DATE
+          default: ${var.end_date}
+        - name: SYNERGY_TEAM_IDS
+          default: ${var.team_ids}
+
+      # Uncomment to run on a schedule (starts PAUSED so a deploy never auto-kicks a run):
+      # schedule:
+      #   quartz_cron_expression: "0 0 6 * * ?"   # daily 06:00
+      #   timezone_id: America/Chicago
+      #   pause_status: PAUSED
+
+      tasks:
+        - task_key: ingest_01
+          notebook_task:
+            notebook_path: ../01_ingest_synergy_api.ipynb
+            base_parameters:
+              UC_CATALOG: "{{job.parameters.UC_CATALOG}}"
+              UC_SCHEMA: "{{job.parameters.UC_SCHEMA}}"
+              SYNERGY_START_DATE: "{{job.parameters.SYNERGY_START_DATE}}"
+              SYNERGY_END_DATE: "{{job.parameters.SYNERGY_END_DATE}}"
+              SYNERGY_TEAM_IDS: "{{job.parameters.SYNERGY_TEAM_IDS}}"
+          environment_key: default
+
+        - task_key: bronze_02
+          depends_on:
+            - task_key: ingest_01
+          notebook_task:
+            notebook_path: ../02_bronze_autoloader.ipynb
+            base_parameters:
+              UC_CATALOG: "{{job.parameters.UC_CATALOG}}"
+              UC_SCHEMA: "{{job.parameters.UC_SCHEMA}}"
+          environment_key: default
+
+        - task_key: silver_03
+          depends_on:
+            - task_key: bronze_02
+          notebook_task:
+            notebook_path: ../03_silver_transformations.ipynb
+            base_parameters:
+              UC_CATALOG: "{{job.parameters.UC_CATALOG}}"
+              UC_SCHEMA: "{{job.parameters.UC_SCHEMA}}"
+          environment_key: default
+
+        - task_key: data_quality_04
+          depends_on:
+            - task_key: silver_03
+          notebook_task:
+            notebook_path: ../04_data_quality.ipynb
+            base_parameters:
+              UC_CATALOG: "{{job.parameters.UC_CATALOG}}"
+              UC_SCHEMA: "{{job.parameters.UC_SCHEMA}}"
+          environment_key: default
+
+        - task_key: gold_05
+          depends_on:
+            - task_key: data_quality_04
+          notebook_task:
+            notebook_path: ../05_gold_star_schema.ipynb
+            base_parameters:
+              UC_CATALOG: "{{job.parameters.UC_CATALOG}}"
+              UC_SCHEMA: "{{job.parameters.UC_SCHEMA}}"
+          environment_key: default
+
+      # Serverless compute env + the pip deps the notebooks need (databricks-connect is NOT needed in-job;
+      # spark is native). Adjust `client` if your workspace pins a different serverless version.
+      environments:
+        - environment_key: default
+          spec:
+            client: "2"
+            dependencies:
+              - requests>=2.31.0
+              - python-dateutil>=2.8.0
+              - databricks-labs-dqx>=0.14.0

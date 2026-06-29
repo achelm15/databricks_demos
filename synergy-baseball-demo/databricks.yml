@@ -1,0 +1,50 @@
+# Databricks Asset Bundle for the Synergy Baseball Solution Accelerator.
+# See https://docs.databricks.com/dev-tools/bundles/index.html
+#
+# No workspace host is pinned here — the Databricks CLI resolves the target workspace from whoever
+# deploys it (their `--profile`, or DATABRICKS_HOST/DATABRICKS_TOKEN). Deploy with, e.g.:
+#   databricks bundle deploy -t dev -p <your-profile>
+# or set DATABRICKS_HOST / DATABRICKS_TOKEN in the environment first.
+
+bundle:
+  name: synergy-baseball-demo
+
+include:
+  - resources/*.yml
+
+# Per-deployment knobs — override at deploy time, e.g. --var="catalog=my_catalog".
+# The pipeline Job (resources/synergy_pipeline.job.yml) passes these to the notebooks as parameters.
+variables:
+  catalog:
+    description: Unity Catalog catalog to deploy into (must already exist).
+    default: main
+  schema:
+    description: Base schema name; the pipeline creates {schema}_bronze/_silver/_gold/_quarantine.
+    default: synergy_baseball_demo
+  warehouse_id:
+    description: SQL Warehouse ID for the Genie space (notebook 06, not part of the scheduled Job).
+    default: ""
+  start_date:
+    description: Ingest window start (ISO yyyy-MM-dd). The only scope for the date-windowed facts (games,
+      events, practice_sessions). Default is a narrow month so events (all-orgs, ~11k/day) don't time out;
+      WIDEN it to capture more practice (sessions span 2024-2026), but events get heavy fast.
+    default: "2024-06-01"
+  end_date:
+    description: Ingest window end (ISO yyyy-MM-dd). See start_date.
+    default: "2024-06-30"
+  team_ids:
+    description: Comma-separated team ids — scopes the team-keyed routes (events + subsets, and
+      players_teamhistory). For events it also lifts the API's 3-month date cap. Blank = those routes are skipped.
+    default: ""
+
+targets:
+  dev:
+    mode: development
+    default: true
+    # No host — the CLI uses your auth profile / DATABRICKS_HOST at deploy time.
+
+  prod:
+    mode: production
+    # Optionally pin a known prod workspace host here, or leave it to the deploy profile:
+    # workspace:
+    #   host: https://<your-prod-workspace>.cloud.databricks.com

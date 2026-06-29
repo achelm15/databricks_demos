@@ -1,38 +1,52 @@
-"""Entity registry + silver column maps for the Synergy Baseball demo.
+"""Entity registry and silver column maps for the Synergy Baseball demo.
 
-Covers EVERY bulk /filter data endpoint in the Synergy OpenAPI spec, with every column path verified
-against the spec at `/external/swagger/v1/swagger.json`.
+Covers every bulk /filter data endpoint in the Synergy OpenAPI spec. Column paths
+are verified against the spec at `/external/swagger/v1/swagger.json`.
 
-Silver is built with VARIANT-path navigation (``data:a:b::type``); each entity lists
+Silver is built with VARIANT-path navigation (``data:a:b::type``). Each entity lists
 ``(variant_path, output_alias, spark_type)`` triples that 03_silver turns into a typed SELECT.
 Nested objects use ``:`` (e.g. ``homeTeam:division:id``); arrays are deferred.
 """
 
-# name -> how 01_ingest pulls it. kind: "reference" (pull all) | "date_scoped" (minDate/maxDate window).
-# season=True also injects a season into the request body.
+# Entity name plus the `scope` 01_ingest uses to decide how to pull each route.
+# Each route is scoped on the axis the API actually supports. Dimensions are pulled in
+# full so fact FKs always resolve; facts are scoped by date and/or team. SYNERGY_TEAM_IDS
+# scopes the team-keyed routes (events, teamhistory) to the customer's teams.
+#   reference  POST /filter with an empty body, pull all. Dimensions: teams, players, venues,
+#              umpires, leagues, divisions, conferences, competitions. players is ~293k (no usable
+#              activity-date filter).
+#   date       Windowed by SYNERGY_START/END_DATE (plus season for games). games, practice_sessions.
+#   session    Practice sub-resources by practiceSessionIds, from the date-windowed practice_sessions.
+#   team_event Event routes: {teamIds: SYNERGY_TEAM_IDS} plus the date window. teamIds scopes events
+#              to the customer's teams and lifts the API's 3-month date cap (which applies only when no
+#              player/team/game filter is given). Without it the event routes return all orgs, so they
+#              are skipped when SYNERGY_TEAM_IDS is unset.
+#   team       One {teamId} call per id in SYNERGY_TEAM_IDS. players_teamhistory only accepts teamId
+#              (400 otherwise); skipped if SYNERGY_TEAM_IDS is unset.
+#   skip       Not ingested: search/typeahead routes (redundant with players/teams, unmodeled in gold).
 ENTITIES = [
-    {"name": "competitions", "path": "/api/competitions/filter", "kind": "reference", "season": False},
-    {"name": "conferences", "path": "/api/conferences/filter", "kind": "reference", "season": False},
-    {"name": "divisions", "path": "/api/divisions/filter", "kind": "reference", "season": False},
-    {"name": "events", "path": "/api/events/filter", "kind": "date_scoped", "season": False},
-    {"name": "events_defense_subset", "path": "/api/events/defense-subset/filter", "kind": "date_scoped", "season": False},
-    {"name": "events_game_state_subset", "path": "/api/events/game-state-subset/filter", "kind": "date_scoped", "season": False},
-    {"name": "events_pitch_subset", "path": "/api/events/pitch-subset/filter", "kind": "date_scoped", "season": False},
-    {"name": "games", "path": "/api/games/filter", "kind": "date_scoped", "season": True},
-    {"name": "leagues", "path": "/api/leagues/filter", "kind": "reference", "season": False},
-    {"name": "players", "path": "/api/players/filter", "kind": "reference", "season": False},
-    {"name": "players_teamhistory", "path": "/api/players/teamhistory", "kind": "reference", "season": False},
-    {"name": "practice_events", "path": "/api/practice/events/filter", "kind": "date_scoped", "season": False},
-    {"name": "practice_sessions", "path": "/api/practice/sessions/filter", "kind": "date_scoped", "season": True},
-    {"name": "practice_training_workout", "path": "/api/practice/training-workout/filter", "kind": "date_scoped", "season": False},
-    {"name": "search_players", "path": "/api/search/players", "kind": "reference", "season": False},
-    {"name": "search_teams", "path": "/api/search/teams", "kind": "reference", "season": False},
-    {"name": "teams", "path": "/api/teams/filter", "kind": "reference", "season": False},
-    {"name": "umpires", "path": "/api/umpires/filter", "kind": "reference", "season": False},
-    {"name": "venues", "path": "/api/venues/filter", "kind": "reference", "season": False},
+    {"name": "competitions", "path": "/api/competitions/filter", "scope": "reference"},
+    {"name": "conferences", "path": "/api/conferences/filter", "scope": "reference"},
+    {"name": "divisions", "path": "/api/divisions/filter", "scope": "reference"},
+    {"name": "leagues", "path": "/api/leagues/filter", "scope": "reference"},
+    {"name": "teams", "path": "/api/teams/filter", "scope": "reference"},
+    {"name": "umpires", "path": "/api/umpires/filter", "scope": "reference"},
+    {"name": "venues", "path": "/api/venues/filter", "scope": "reference"},
+    {"name": "games", "path": "/api/games/filter", "scope": "date", "season": True},
+    {"name": "practice_sessions", "path": "/api/practice/sessions/filter", "scope": "date"},  # windowed; supplies session ids for the practice_events/workout pulls (no season, which drops sessions)
+    {"name": "players", "path": "/api/players/filter", "scope": "reference"},  # ~293k full catalog dimension; no usable activity-date filter
+    {"name": "players_teamhistory", "path": "/api/players/teamhistory", "scope": "team"},  # only accepts teamId (400 otherwise); pulled per id in SYNERGY_TEAM_IDS
+    {"name": "practice_events", "path": "/api/practice/events/filter", "scope": "session"},
+    {"name": "practice_training_workout", "path": "/api/practice/training-workout/filter", "scope": "session"},
+    {"name": "events", "path": "/api/events/filter", "scope": "team_event"},
+    {"name": "events_defense_subset", "path": "/api/events/defense-subset/filter", "scope": "team_event"},
+    {"name": "events_game_state_subset", "path": "/api/events/game-state-subset/filter", "scope": "team_event"},
+    {"name": "events_pitch_subset", "path": "/api/events/pitch-subset/filter", "scope": "team_event"},
+    {"name": "search_players", "path": "/api/search/players", "scope": "skip"},
+    {"name": "search_teams", "path": "/api/search/teams", "scope": "skip"},
 ]
 
-# entity -> [(variant_path_under_`data`, output_alias, spark_type)]  (verified against the OpenAPI spec)
+# entity -> [(variant_path_under_`data`, output_alias, spark_type)], verified against the OpenAPI spec
 SILVER_COLUMNS = {
     "competitions": [
         ("id", "id", "string"),
@@ -962,7 +976,7 @@ SILVER_COLUMNS = {
     ],
 }
 
-# Natural keys (per the OpenAPI spec) — used for the silver dedup/PK.
+# Natural keys (per the OpenAPI spec), used for the silver dedup and PK.
 PRIMARY_KEYS = {
     "competitions": ['id'],
     "conferences": ['id'],
