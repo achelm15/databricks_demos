@@ -97,7 +97,10 @@ Two things to know:
 
 ## Setup
 
-1. **Install deps** (local): `pip install -r requirements.txt`
+1. **Install deps** (local): `pip install -r requirements.txt`. `databricks-connect` is pinned to a
+   Databricks Runtime major version (e.g. `>=18.0,<18.1`) and **must match your workspace's DBR** for local
+   Databricks Connect to work — bump the pin in `requirements.txt` to your runtime if they differ. (Do not
+   install standalone `pyspark` alongside it; `databricks-connect` bundles its own.)
 2. **Configure** — `cp .env.example .env` and fill in `UC_CATALOG`, `UC_SCHEMA`, and either
    `DATABRICKS_HOST`/`DATABRICKS_TOKEN` (laptop) or run inside a Databricks Git Folder.
 3. **Synergy credentials** — locally, put `SYNERGY_CLIENT_ID`/`SYNERGY_CLIENT_SECRET` in `.env`. To run in
@@ -150,6 +153,34 @@ databricks secrets list-secrets synergy -p <your-profile>
 05_gold_star_schema       →  builds the gold star schema (dims + facts, RELY constraints)
 06_genie_and_dashboard    →  annotates gold + builds the Genie space
 ```
+
+That's the interactive path. To run `01`–`05` unattended as a serverless Job, see
+[Deploy as a scheduled Job](#deploy-as-a-scheduled-job-asset-bundle).
+
+## Deploy as a scheduled Job (Asset Bundle)
+
+`00` and `06` are meant to be run interactively, but the ingest-to-gold pipeline (`01`–`05`) also ships as
+a [Databricks Asset Bundle](https://docs.databricks.com/dev-tools/bundles/index.html) so you can deploy it
+as one serverless **Job** and schedule it. The bundle is `databricks.yml` plus
+`resources/synergy_pipeline.job.yml`.
+
+```bash
+# Deploy to your workspace. The CLI resolves the target from your auth profile (-p) or DATABRICKS_HOST.
+databricks bundle deploy -t dev -p <your-profile>
+
+# Run the pipeline once: ingest -> bronze -> silver -> data quality -> gold.
+databricks bundle run synergy_pipeline -t dev -p <your-profile>
+```
+
+- **Parameters.** Catalog, schema, and the ingest scope are job-level parameters (`UC_CATALOG`, `UC_SCHEMA`,
+  `SYNERGY_START_DATE`, `SYNERGY_END_DATE`, `SYNERGY_TEAM_IDS`), defaulted from the bundle variables in
+  `databricks.yml`. Override them per deploy with `--var`, or per run from the Jobs UI "Run now" dialog.
+  (`SQL_WAREHOUSE_ID` is only needed for the Genie space in `06`, which is not part of the Job.)
+- **Prerequisites in the target workspace:** Serverless jobs enabled, the `synergy` secret scope readable by
+  the run identity, and an existing catalog the run identity can create schemas, volumes, and tables in.
+- **Schedule.** `resources/synergy_pipeline.job.yml` has a commented-out `schedule` block (starts paused);
+  uncomment it and redeploy to run on a cron.
+- **Promote to prod** with the `prod` target: `databricks bundle deploy -t prod -p <prod-profile>`.
 
 ### No Synergy credentials yet?
 
