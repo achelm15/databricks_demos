@@ -74,7 +74,7 @@ ingest — you opt into columns by adding them to `synergy_schemas.SILVER_COLUMN
 
 **The date range is the only scoping knob.** Dimensions are pulled in full (so fact foreign keys always
 resolve); the time-series facts are windowed by `SYNERGY_START_DATE` / `SYNERGY_END_DATE`. Each entity
-declares **how it's pulled** via a `scope` field in `ENTITIES`, and `01` is just a dispatcher:
+declares **how it's pulled** via a `scope` field in `ENTITIES`, and `01` is a dispatcher over them:
 
 | `scope` | How it's pulled | Entities |
 |---|---|---|
@@ -88,8 +88,8 @@ declares **how it's pulled** via a `scope` field in `ENTITIES`, and `01` is just
 Two things to know:
 - **`players` is the full ~293k catalog.** The API has no usable activity-date filter for it, so it's pulled
   as a dimension in full. Expect a multi-minute pull and a large `dim_player`.
-- **Events scope by `teamIds`, not date alone.** Date-only events are an all-orgs, ~11k-rows/day firehose
-  (the API even caps a date-only query to 3 months). Passing `teamIds` (from `SYNERGY_TEAM_IDS`) limits events
+- **Events scope by `teamIds`, not date alone.** Date-only events return all orgs (~11k rows/day, and the
+  API even caps a date-only query to 3 months). Passing `teamIds` (from `SYNERGY_TEAM_IDS`) limits events
   to your teams *and* lifts that cap — so set `SYNERGY_TEAM_IDS` to pull events; **they're skipped when it's
   unset.** `players_teamhistory` is also team-keyed — it *can't* be date-scoped (the API returns 400
   without a `teamId`), so it's pulled from the explicit `SYNERGY_TEAM_IDS` list — leave that blank to skip it
@@ -218,12 +218,16 @@ it means this Synergy data lines up with any other MLBAM-keyed source the custom
 - **Two scoping axes: date and team.** `SYNERGY_START_DATE`/`END_DATE` window `games` and `practice_sessions`
   (which scopes `practice_events`); `SYNERGY_TEAM_IDS` scopes `events` and `players_teamhistory`. Dimensions
   (incl. all ~293k `players`) are pulled in full. If a fact table is empty, widen the window or set the team ids.
-- **Events need `SYNERGY_TEAM_IDS`.** Date-only events are an all-orgs ~11k-rows/day firehose (and the API
+- **Events need `SYNERGY_TEAM_IDS`.** Date-only events return all orgs (~11k rows/day, and the API
   caps a date-only query to 3 months); passing `teamIds` scopes them to your teams and lifts the cap. So set
   `SYNERGY_TEAM_IDS` to your club/affiliate ids to pull events — otherwise the event routes are skipped.
-- **Full refresh.** `silver`/`gold` use `CREATE OR REPLACE` (Spark Connect can't `MERGE`). Bronze is
-  incremental via Auto Loader; for incremental silver/gold on large volumes, switch those writes to `MERGE`
-  when running inside a Databricks cluster.
+- **Incremental loads.** Each ingest run (`01`) lands immutable, timestamped files, so re-running refreshes
+  the data: Auto Loader ingests the new files into bronze (it skips paths it has already seen, so unique
+  names are what make a re-pull land), and silver/gold upsert via `MERGE` on the natural/surrogate key —
+  a re-run updates changed rows and inserts new ones instead of rewriting tables. `MERGE WITH SCHEMA
+  EVOLUTION` also absorbs new columns when you extend `SILVER_COLUMNS`. Bronze accumulates the raw
+  snapshots (silver dedups to the latest per key); the old files in the `raw_data` Volume can be cleaned
+  up periodically.
 
 ## Notes & gotchas (learned running this)
 
